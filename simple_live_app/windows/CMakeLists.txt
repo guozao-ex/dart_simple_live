@@ -32,6 +32,14 @@ set(CMAKE_CXX_FLAGS_PROFILE "${CMAKE_CXX_FLAGS_RELEASE}")
 # Use Unicode for all projects.
 add_definitions(-DUNICODE -D_UNICODE)
 
+# MSVC 14.4x+（VS 2022 17.10+ / VS 2026）将 <experimental/coroutine> 的弃用提示
+# 升级为硬错误（STL1011），而部分插件的依赖头文件（cppwinrt/WebView2 等）仍在使用。
+# 该宏在旧版 MSVC 上无副作用。
+add_compile_definitions(_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
+
+# 统一使用 UTF-8 解析源码与字面量，避免中文代码页(936)下的 C4819 警告（配合 /WX 会中断构建）。
+add_compile_options(/utf-8)
+
 # Compilation settings that should be applied to most targets.
 #
 # Be cautious about adding new options here, as plugins use this function by

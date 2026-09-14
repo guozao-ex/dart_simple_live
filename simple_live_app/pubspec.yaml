@@ -36,7 +36,9 @@ dependencies:
   flutter_smart_dialog: ^4.9.8+9 #各种弹窗 Toast/Dialog/Popup
   sticky_headers: ^0.3.0+2 #吸顶
   lottie: ^3.3.2 #lottie动画
-  canvas_danmaku: ^0.2.7
+  # 弹幕（本地副本，补丁：字重索引钳位 + 可变字体 wght 轴支持，详见 packages/canvas_danmaku/PATCHES.md）
+  canvas_danmaku:
+    path: ../packages/canvas_danmaku
   # ns_danmaku: #弹幕
   #   git:
   #     url: https://github.com/xiaoyaocz/flutter_ns_danmaku.git
@@ -102,3 +104,12 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/lotties/
+    # 内置弹幕字体许可证（OFL 1.1 要求随字体一起分发）
+    - assets/fonts/OFL.txt
+  fonts:
+    # 弹幕内置字体：思源黑体 Noto Sans SC 可变字体（GB2312 + 常用符号子集）
+    # 许可证：SIL Open Font License 1.1，见 assets/fonts/OFL.txt
+    # 通过 canvas_danmaku 的 fontVariations 补丁支持 wght 100-900 全部 9 档字重
+    - family: NotoSansSC
+      fonts:
+        - asset: assets/fonts/NotoSansSC-VF.ttf
