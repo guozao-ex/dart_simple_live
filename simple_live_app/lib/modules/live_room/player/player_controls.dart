@@ -650,14 +650,8 @@ Widget buildDanmuView(VideoState videoState, LiveRoomController controller) {
   controller.danmakuView ??= DanmakuScreen(
     key: controller.globalDanmuKey,
     createdController: controller.initDanmakuController,
-    option: DanmakuOption(
-      fontSize: AppSettingsController.instance.danmuSize.value,
-      area: AppSettingsController.instance.danmuArea.value,
-      duration: AppSettingsController.instance.danmuSpeed.value.toInt(),
-      opacity: AppSettingsController.instance.danmuOpacity.value,
-      //strokeWidth: AppSettingsController.instance.danmuStrokeWidth.value,
-      fontWeight: AppSettingsController.instance.danmuFontWeight.value,
-    ),
+    // 弹幕配置统一由 AppSettingsController.toDanmakuOption() 构建
+    option: AppSettingsController.instance.toDanmakuOption(),
   );
   return Positioned.fill(
     top: padding.top,

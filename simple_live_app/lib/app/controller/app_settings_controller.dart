@@ -5,12 +5,33 @@ import 'package:simple_live_app/app/log.dart';
 import 'package:simple_live_app/app/sites.dart';
 import 'package:simple_live_app/services/local_storage_service.dart';
 
+import 'package:canvas_danmaku/canvas_danmaku.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 class AppSettingsController extends GetxController {
   static AppSettingsController get instance =>
       Get.find<AppSettingsController>();
+
+  /// 弹幕内置字体（Noto Sans SC 可变字体，支持 9 档字重）
+  static const String kDanmuBuiltinFontFamily = "NotoSansSC";
+
+  /// 弹幕系统默认字体
+  static const String kDanmuSystemFontFamily = "";
+
+  /// 弹幕设置的 1-9 档字重映射为 FontWeight 索引（0-8）
+  static int danmuFontWeightToIndex(int value) {
+    final index = value - 1;
+    if (index < 0) {
+      return 0;
+    }
+    final max = FontWeight.values.length - 1;
+    return index > max ? max : index;
+  }
+
+  /// 当前弹幕字重索引
+  int get danmuFontWeightIndex =>
+      danmuFontWeightToIndex(danmuFontWeight.value);
 
   /// 缩放模式
   var scaleMode = 0.obs;
@@ -43,6 +64,15 @@ class AppSettingsController extends GetxController {
         .getValue(LocalStorageService.kDanmuBottomMargin, 0.0);
     danmuFontWeight.value = LocalStorageService.instance
         .getValue(LocalStorageService.kDanmuFontWeight, 4);
+    danmuFontFamily.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDanmuFontFamily,
+      kDanmuBuiltinFontFamily,
+    );
+    // 兼容旧数据/异常值，未知字体统一回退到内置字体
+    if (danmuFontFamily.value != kDanmuBuiltinFontFamily &&
+        danmuFontFamily.value != kDanmuSystemFontFamily) {
+      danmuFontFamily.value = kDanmuBuiltinFontFamily;
+    }
 
     hardwareDecode.value = LocalStorageService.instance
         .getValue(LocalStorageService.kHardwareDecode, true);
@@ -309,6 +339,26 @@ class AppSettingsController extends GetxController {
     LocalStorageService.instance
         .setValue(LocalStorageService.kDanmuFontWeight, e);
   }
+
+  /// 弹幕字体，[kDanmuSystemFontFamily] 表示系统默认
+  var danmuFontFamily = kDanmuBuiltinFontFamily.obs;
+  void setDanmuFontFamily(String e) {
+    danmuFontFamily.value = e;
+    LocalStorageService.instance
+        .setValue(LocalStorageService.kDanmuFontFamily, e);
+  }
+
+  /// 构建当前弹幕渲染配置（弹幕设置页与播放器共用，保证各设置项一致生效）
+  DanmakuOption toDanmakuOption() => DanmakuOption(
+        fontSize: danmuSize.value,
+        area: danmuArea.value,
+        duration: danmuSpeed.value,
+        opacity: danmuOpacity.value,
+        strokeWidth: danmuStrokeWidth.value,
+        fontWeight: danmuFontWeightIndex,
+        fontFamily:
+            danmuFontFamily.value.isEmpty ? null : danmuFontFamily.value,
+      );
 
   var qualityLevel = 1.obs;
   void setQualityLevel(int level) {

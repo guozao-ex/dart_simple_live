@@ -6,6 +6,7 @@ import 'package:simple_live_app/app/controller/app_settings_controller.dart';
 import 'package:simple_live_app/routes/route_path.dart';
 import 'package:simple_live_app/widgets/settings/settings_action.dart';
 import 'package:simple_live_app/widgets/settings/settings_card.dart';
+import 'package:simple_live_app/widgets/settings/settings_menu.dart';
 import 'package:simple_live_app/widgets/settings/settings_number.dart';
 import 'package:simple_live_app/widgets/settings/settings_switch.dart';
 
@@ -93,9 +94,7 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
                   unit: "%",
                   onChanged: (e) {
                     controller.setDanmuArea(e / 100.0);
-                    updateDanmuOption(
-                      danmakuController?.option.copyWith(area: e / 100.0),
-                    );
+                    updateDanmuOption(controller.toDanmakuOption());
                   },
                 ),
               ),
@@ -110,9 +109,7 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
                   unit: "%",
                   onChanged: (e) {
                     controller.setDanmuOpacity(e / 100.0);
-                    updateDanmuOption(
-                      danmakuController?.option.copyWith(opacity: e / 100.0),
-                    );
+                    updateDanmuOption(controller.toDanmakuOption());
                   },
                 ),
               ),
@@ -125,10 +122,23 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
                   max: 48,
                   onChanged: (e) {
                     controller.setDanmuSize(e.toDouble());
-                    updateDanmuOption(
-                      danmakuController?.option
-                          .copyWith(fontSize: e.toDouble()),
-                    );
+                    updateDanmuOption(controller.toDanmakuOption());
+                  },
+                ),
+              ),
+              AppStyle.divider,
+              Obx(
+                () => SettingsMenu<String>(
+                  title: "字体",
+                  subtitle: "内置字体已针对弹幕阅读优化",
+                  value: controller.danmuFontFamily.value,
+                  valueMap: const {
+                    AppSettingsController.kDanmuBuiltinFontFamily: "内置字体（推荐）",
+                    AppSettingsController.kDanmuSystemFontFamily: "系统默认",
+                  },
+                  onChanged: (e) {
+                    controller.setDanmuFontFamily(e);
+                    updateDanmuOption(controller.toDanmakuOption());
                   },
                 ),
               ),
@@ -150,15 +160,11 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
                     "粗",
                     "很粗",
                     "极粗"
-                  ][controller.danmuFontWeight.value - 1]
+                  ][controller.danmuFontWeightIndex]
                       .toString(),
                   onChanged: (e) {
                     controller.setDanmuFontWeight(e);
-                    updateDanmuOption(
-                      danmakuController?.option.copyWith(
-                        fontWeight: e,
-                      ),
-                    );
+                    updateDanmuOption(controller.toDanmakuOption());
                   },
                 ),
               ),
@@ -172,9 +178,7 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
                   max: 20,
                   onChanged: (e) {
                     controller.setDanmuSpeed(e.toDouble());
-                    updateDanmuOption(
-                      danmakuController?.option.copyWith(duration: e.toInt()),
-                    );
+                    updateDanmuOption(controller.toDanmakuOption());
                   },
                 ),
               ),
@@ -187,10 +191,7 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
               //     max: 10,
               //     onChanged: (e) {
               //       controller.setDanmuStrokeWidth(e.toDouble());
-              //       updateDanmuOption(
-              //         danmakuController?.option
-              //             .copyWith(strokeWidth: e.toDouble()),
-              //       );
+              //       updateDanmuOption(controller.toDanmakuOption());
               //     },
               //   ),
               // ),
