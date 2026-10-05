@@ -77,6 +77,16 @@ class LiveSite {
     return Future.value(LivePlayUrl(urls: []));
   }
 
+  /// 重新解析指定线路的播放地址（租约续流用）。
+  /// 平台不支持或解析失败时返回 null。
+  Future<String?> renewPlayUrl({
+    required LiveRoomDetail detail,
+    required LivePlayQuality quality,
+    required int lineIndex,
+  }) {
+    return Future.value(null);
+  }
+
   /// 查询直播状态
   Future<bool> getLiveStatus({required String roomId}) {
     return Future.value(false);
