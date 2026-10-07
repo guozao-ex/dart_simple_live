@@ -107,6 +107,10 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
   var liveDuration = "00:00:00".obs;
   Timer? _liveDurationTimer;
 
+  // 斗鱼定时换流地址定时器（流地址租约到期前换新流，防止长时间播放断流）
+  Timer? _douyuStreamRefreshTimer;
+  static const _douyuStreamRefreshInterval = Duration(seconds: 270);
+
   @override
   void onInit() {
     WidgetsBinding.instance.addObserver(this);
@@ -323,6 +327,9 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       liveStatus.value = detail.value!.status || detail.value!.isRecord;
       if (liveStatus.value) {
         getPlayQualites();
+        startDouyuStreamRefreshTimer();
+      } else {
+        stopDouyuStreamRefreshTimer();
       }
       if (detail.value!.isRecord) {
         addSysMsg("当前主播未开播，正在轮播录像");
@@ -387,6 +394,59 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       Log.logPrint(e);
     }
     return qualityLevel;
+  }
+
+  /// 启动斗鱼定时换流定时器：仅斗鱼启用，每270秒重新获取一次流地址并换流，
+  /// 避免斗鱼流地址租约到期导致的长时间播放断流。其他平台不启用。
+  void startDouyuStreamRefreshTimer() {
+    if (site.id != Constant.kDouyu) {
+      return;
+    }
+    stopDouyuStreamRefreshTimer();
+    _douyuStreamRefreshTimer = Timer.periodic(_douyuStreamRefreshInterval, (_) {
+      // 进入后台或未在播放时不换流
+      if (isBackground || !liveStatus.value) {
+        return;
+      }
+      Log.d("斗鱼定时换流地址");
+      refreshPlayUrl();
+    });
+  }
+
+  void stopDouyuStreamRefreshTimer() {
+    _douyuStreamRefreshTimer?.cancel();
+    _douyuStreamRefreshTimer = null;
+  }
+
+  /// 重新获取当前清晰度的流地址并重新播放（不重连弹幕、不重置清晰度）
+  void refreshPlayUrl() async {
+    if (qualites.isEmpty || currentQuality < 0) {
+      return;
+    }
+    try {
+      var playUrl = await site.liveSite.getPlayUrls(
+        detail: detail.value!,
+        quality: qualites[currentQuality],
+      );
+      if (playUrl.urls.isEmpty) {
+        return;
+      }
+      playUrls.value = playUrl.urls;
+      playHeaders = playUrl.headers;
+      // 等待播放器缓冲旧流结束后再换流，避免打断当前播放
+      await player.stream.buffering.firstWhere((e) => !e);
+      await initializePlayer();
+      await player.open(Playlist([
+        Media(
+          AppSettingsController.instance.playerForceHttps.value
+              ? playUrl.urls.first.replaceAll("http://", "https://")
+              : playUrl.urls.first,
+          httpHeaders: playHeaders,
+        ),
+      ]));
+    } catch (e) {
+      Log.logPrint(e);
+    }
   }
 
   void getPlayUrl() async {
@@ -1060,6 +1120,7 @@ ${error?.stackTrace}''');
     liveDanmaku.stop();
     danmakuController = null;
     _liveDurationTimer?.cancel(); // 页面关闭时取消定时器
+    stopDouyuStreamRefreshTimer(); // 页面关闭时取消斗鱼换流定时器
     super.onClose();
   }
 }
