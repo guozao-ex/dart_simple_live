@@ -169,29 +169,6 @@ class DouyuSite implements LiveSite {
     return "${result["data"]["rtmp_url"]}/${HtmlUnescape().convert(result["data"]["rtmp_live"].toString())}";
   }
 
-  /// 重新解析同线路同画质的地址，供租约续流使用。
-  @override
-  Future<String?> renewPlayUrl({
-    required LiveRoomDetail detail,
-    required LivePlayQuality quality,
-    required int lineIndex,
-  }) async {
-    try {
-      final data = quality.data as DouyuPlayData;
-      if (lineIndex < 0 || lineIndex >= data.cdns.length) {
-        return null;
-      }
-      return await getPlayUrl(
-        detail.roomId,
-        detail.data.toString(),
-        data.rate,
-        data.cdns[lineIndex],
-      );
-    } catch (e) {
-      return null;
-    }
-  }
-
   @override
   Future<LiveCategoryResult> getRecommendRooms({int page = 1}) async {
     var result = await HttpClient.instance.getJson(

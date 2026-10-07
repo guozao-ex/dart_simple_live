@@ -208,16 +208,6 @@ class HuyaSite implements LiveSite {
   }
 
   @override
-  /// 重新解析指定线路的播放地址（租约续流用）；本平台暂不支持，返回 null。
-  @override
-  Future<String?> renewPlayUrl({
-    required LiveRoomDetail detail,
-    required LivePlayQuality quality,
-    required int lineIndex,
-  }) {
-    return Future.value(null);
-  }
-
   Future<LivePlayUrl> getPlayUrls(
       {required LiveRoomDetail detail,
       required LivePlayQuality quality}) async {

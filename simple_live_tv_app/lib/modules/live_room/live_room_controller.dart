@@ -53,10 +53,6 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
 
   Map<String, String>? playHeaders;
 
-  /// FLV 租约续流中继：斗鱼等平台的游客态流地址带 expire 租约，
-  /// CDN 到期掐线（约 5 分钟断流一次），经本地中继无缝续流规避。
-  FlvLeaseRelay? _leaseRelay;
-
   /// 当前线路
   var currentLineIndex = -1;
   var currentLineInfo = "".obs;
@@ -215,60 +211,13 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       SmartDialog.showToast("无法读取播放地址");
       return;
     }
+    playUrls.value = playUrl.urls;
     playHeaders = playUrl.headers;
-    if (playUrl.urls.any(LeasedSource.hasLease)) {
-      // 租约流：经本地续流中继播放，由中继在到期前自动续流拼接
-      playUrls.value = await _wrapWithLeaseRelay(playUrl.urls);
-    } else {
-      await _closeLeaseRelay();
-      playUrls.value = playUrl.urls;
-    }
     currentLineIndex = 0;
     currentLineInfo.value = "线路${currentLineIndex + 1}";
     //重置错误次数
     mediaErrorRetryCount = 0;
     setPlayer();
-  }
-
-  /// 用本地续流中继包装带租约的播放地址，返回交给播放器的本地地址列表。
-  Future<List<String>> _wrapWithLeaseRelay(List<String> urls) async {
-    await _leaseRelay?.close();
-    final relay = FlvLeaseRelay();
-    await relay.start();
-    _leaseRelay = relay;
-    final result = <String>[];
-    for (var i = 0; i < urls.length; i++) {
-      final url = urls[i];
-      if (!LeasedSource.hasLease(url)) {
-        result.add(url);
-        continue;
-      }
-      result.add(await relay.register(
-        key: 'line$i',
-        source: LeasedSource(
-          url: Uri.parse(url),
-          headers: playHeaders ?? const {},
-          issuedAt: DateTime.now(),
-        ),
-        renewer: () async {
-          final renewed = await site.liveSite.renewPlayUrl(
-            detail: detail.value!,
-            quality: qualites[currentQuality],
-            lineIndex: i,
-          );
-          if (renewed == null) {
-            return null;
-          }
-          return LeasedSource(url: Uri.parse(renewed));
-        },
-      ));
-    }
-    return result;
-  }
-
-  Future<void> _closeLeaseRelay() async {
-    await _leaseRelay?.close();
-    _leaseRelay = null;
   }
 
   void changePlayLine(int index) {
@@ -420,7 +369,6 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
 
     // 停止播放
     await player.stop();
-    await _closeLeaseRelay();
 
     // 刷新信息
     loadData();
@@ -491,7 +439,6 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
 
   @override
   void onClose() {
-    _closeLeaseRelay();
     liveDanmaku.stop();
 
     danmakuController = null;

@@ -23,20 +23,4 @@ plugins {
     id("org.jetbrains.kotlin.android") version "2.1.0" apply false
 }
 
-// 部分插件（如 dynamic_color 1.9.0）的 Kotlin DSL 脚本使用顶层 kotlin{}
-// 扩展，但自身未应用 Kotlin 插件；在此为所有子项目预应用并默认对齐
-// JVM_1_8（AGP 默认 Java 目标），自带声明者（如 dynamic_color 的 17）会覆盖。
-gradle.beforeProject {
-    if (path != ":") {
-        pluginManager.apply("org.jetbrains.kotlin.android")
-        extensions.configure(
-            org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension::class.java
-        ) {
-            compilerOptions {
-                jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_1_8)
-            }
-        }
-    }
-}
-
 include(":app")
