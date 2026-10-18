@@ -2,8 +2,8 @@ schema: comet.native.v4
 name: douyu-flv-renew-relay
 language: zh-CN
 phase: archive
-status: active
-state_version: 14
+status: done
+state_version: 18
 brief: brief.md
 document_constraints_version: 3
 shape_confirmation_hash: a7a6e4d1480c29e97d492ce8badae6fb741be733a66cbff6687efe4c2c66ce2d
@@ -17,7 +17,7 @@ workspace:
   target_branch: master
   finish: merge
 loop:
-  stage: archive-ready
+  stage: done
   goal_cycle: 2
   iteration: 2
   attempt: 1
@@ -26,7 +26,7 @@ loop:
   no_progress_count: 0
   execution_failure_count: 0
   previous_unresolved_ids: []
-  next_action: archive
+  next_action: null
 acceptance:
   - id: A1
     source: brief.md
@@ -391,5 +391,5 @@ history_overflow:
     recovery: 0
 verification_result: pass
 verification_report: verification.md
-archived: false
+archived: true
 created_at: 2026-10-18T08:56:17.160Z
