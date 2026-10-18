@@ -109,6 +109,17 @@ class PlaySettingsPage extends GetView<AppSettingsController> {
                     },
                   ),
                 ),
+                AppStyle.divider,
+                Obx(
+                  () => SettingsSwitch(
+                    title: "斗鱼自动续流",
+                    subtitle: "到期前自动无缝换流，修复斗鱼每5分钟断流",
+                    value: controller.douyuRenewRelay.value,
+                    onChanged: (e) {
+                      controller.setDouyuRenewRelay(e);
+                    },
+                  ),
+                ),
               ],
             ),
           ),

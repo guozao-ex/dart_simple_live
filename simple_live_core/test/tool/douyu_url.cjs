@@ -33,12 +33,30 @@ async function sign(roomId) {
   return (0, eval)("ub98484234('" + roomId + "','" + DID + "'," + tt + ')');
 }
 
+// 房间号传 auto 时从推荐列表里挑一个正在直播的房间，避免写死的房间下播后失效。
+async function resolveLiveRoomId() {
+  const res = await fetch('https://www.douyu.com/japi/weblist/apinc/allpage/6/1', {
+    headers: { referer: 'https://www.douyu.com/', 'user-agent': UA },
+  });
+  const json = await res.json();
+  const items = ((json.data || {}).rl || []).filter((item) => item.type === 1);
+  if (!items.length) {
+    throw new Error('推荐列表里没有正在直播的房间');
+  }
+  const picked = items[0];
+  console.error('[douyu_url] auto 选中房间 ' + picked.rid + '（在线 ' + picked.ol + '）');
+  return String(picked.rid);
+}
+
 async function main() {
-  const roomId = process.argv[2];
+  let roomId = process.argv[2];
   const cdn = process.argv[3] || 'hw-h5';
   if (!roomId) {
-    console.error('用法: node douyu_url.cjs <房间号> [cdn]');
+    console.error('用法: node douyu_url.cjs <房间号|auto> [cdn]');
     process.exit(2);
+  }
+  if (roomId === 'auto') {
+    roomId = await resolveLiveRoomId();
   }
   const data = await sign(roomId);
   const body =

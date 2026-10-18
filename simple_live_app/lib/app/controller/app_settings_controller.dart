@@ -110,6 +110,10 @@ class AppSettingsController extends GetxController {
     playerForceHttps.value = LocalStorageService.instance
         .getValue(LocalStorageService.kPlayerForceHttps, false);
 
+    // 斗鱼自动续流默认开启：它是修 5 分钟断流的正解，关掉等于回到旧行为
+    douyuRenewRelay.value = LocalStorageService.instance
+        .getValue(LocalStorageService.kDouyuRenewRelay, true);
+
     autoFullScreen.value = LocalStorageService.instance
         .getValue(LocalStorageService.kAutoFullScreen, false);
 
@@ -580,5 +584,14 @@ class AppSettingsController extends GetxController {
     playerForceHttps.value = e;
     LocalStorageService.instance
         .setValue(LocalStorageService.kPlayerForceHttps, e);
+  }
+
+  /// 斗鱼自动续流（本地中继）：关闭后斗鱼播放走原始地址，
+  /// 由既有的定时换流兜底
+  var douyuRenewRelay = true.obs;
+  void setDouyuRenewRelay(bool e) {
+    douyuRenewRelay.value = e;
+    LocalStorageService.instance
+        .setValue(LocalStorageService.kDouyuRenewRelay, e);
   }
 }

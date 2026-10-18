@@ -13,13 +13,26 @@ class FlvRenewPlayback {
   /// 交给播放器的地址，顺序与原始地址一致。
   final List<String> urls;
 
+  /// 仅供测试注入：用于断言「关闭开关时根本不会构造中继」，
+  /// 从而证明关闭路径不会绑定任何本地端口。生产代码不要设置它。
+  static FlvRenewRelay Function()? debugRelayFactory;
+
   /// 是否是看起来可以直接走的 HTTP-FLV 地址。
   ///
   /// HLS（m3u8）不能按 tag 接续，所以不接入中继。
   static bool looksLikeFlv(String url) => url.toLowerCase().contains('.flv');
 
   /// 接入中继；返回 null 表示不接入（调用方用原始地址）。
-  static Future<FlvRenewPlayback?> create(LivePlayUrl playUrl) async {
+  ///
+  /// [enabled] 为用户开关：关闭时直接返回 null——不绑定端口、不建立中继、
+  /// 也不会调用续流取址，调用方继续用原始直连地址播放。
+  static Future<FlvRenewPlayback?> create(
+    LivePlayUrl playUrl, {
+    bool enabled = true,
+  }) async {
+    if (!enabled) {
+      return null;
+    }
     final renew = playUrl.renewUrl;
     if (renew == null || playUrl.urls.isEmpty) {
       return null;
@@ -31,7 +44,7 @@ class FlvRenewPlayback {
     if (wrapIndexes.isEmpty) {
       return null;
     }
-    final relay = FlvRenewRelay();
+    final relay = (debugRelayFactory ?? FlvRenewRelay.new)();
     try {
       await relay.start();
     } catch (error) {

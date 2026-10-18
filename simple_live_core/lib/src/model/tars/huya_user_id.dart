@@ -14,27 +14,27 @@ class HuyaUserId extends TarsStruct {
   String sQIMEI = "";
 
   @override
-  void readFrom(TarsInputStream _is) {
-    lUid = _is.read(lUid, 0, false);
-    sGuid = _is.read(sGuid, 1, false);
-    sToken = _is.read(sToken, 2, false);
-    sHuYaUA = _is.read(sHuYaUA, 3, false);
-    sCookie = _is.read(sCookie, 4, false);
-    iTokenType = _is.read(iTokenType, 5, false);
-    sDeviceInfo = _is.read(sDeviceInfo, 6, false);
-    sQIMEI = _is.read(sQIMEI, 7, false);
+  void readFrom(TarsInputStream inputStream) {
+    lUid = inputStream.read(lUid, 0, false);
+    sGuid = inputStream.read(sGuid, 1, false);
+    sToken = inputStream.read(sToken, 2, false);
+    sHuYaUA = inputStream.read(sHuYaUA, 3, false);
+    sCookie = inputStream.read(sCookie, 4, false);
+    iTokenType = inputStream.read(iTokenType, 5, false);
+    sDeviceInfo = inputStream.read(sDeviceInfo, 6, false);
+    sQIMEI = inputStream.read(sQIMEI, 7, false);
   }
 
   @override
-  void writeTo(TarsOutputStream _os) {
-    _os.write(lUid, 0);
-    _os.write(sGuid, 1);
-    _os.write(sToken, 2);
-    _os.write(sHuYaUA, 3);
-    _os.write(sCookie, 4);
-    _os.write(iTokenType, 5);
-    _os.write(sDeviceInfo, 6);
-    _os.write(sQIMEI, 7);
+  void writeTo(TarsOutputStream outputStream) {
+    outputStream.write(lUid, 0);
+    outputStream.write(sGuid, 1);
+    outputStream.write(sToken, 2);
+    outputStream.write(sHuYaUA, 3);
+    outputStream.write(sCookie, 4);
+    outputStream.write(iTokenType, 5);
+    outputStream.write(sDeviceInfo, 6);
+    outputStream.write(sQIMEI, 7);
   }
 
   @override
@@ -52,14 +52,14 @@ class HuyaUserId extends TarsStruct {
 
   @override
   void displayAsString(StringBuffer sb, int level) {
-    TarsDisplayer _ds = TarsDisplayer(sb, level: level);
-    _ds.DisplayInt(lUid, "lUid");
-    _ds.DisplayString(sGuid, "sGuid");
-    _ds.DisplayString(sToken, "sToken");
-    _ds.DisplayString(sHuYaUA, "sHuYaUA");
-    _ds.DisplayString(sCookie, "sCookie");
-    _ds.DisplayInt(iTokenType, "iTokenType");
-    _ds.DisplayString(sDeviceInfo, "sDeviceInfo");
-    _ds.DisplayString(sQIMEI, "sQIMEI");
+    TarsDisplayer displayer = TarsDisplayer(sb, level: level);
+    displayer.DisplayInt(lUid, "lUid");
+    displayer.DisplayString(sGuid, "sGuid");
+    displayer.DisplayString(sToken, "sToken");
+    displayer.DisplayString(sHuYaUA, "sHuYaUA");
+    displayer.DisplayString(sCookie, "sCookie");
+    displayer.DisplayInt(iTokenType, "iTokenType");
+    displayer.DisplayString(sDeviceInfo, "sDeviceInfo");
+    displayer.DisplayString(sQIMEI, "sQIMEI");
   }
 }

@@ -172,6 +172,22 @@ class SettingsPage extends GetView<SettingsController> {
         AppStyle.vGap24,
         Obx(
           () => SettingsItemWidget(
+            foucsNode: controller.douyuRenewRelayFocusNode,
+            autofocus: controller.douyuRenewRelayFocusNode.isFoucsed.value,
+            title: "斗鱼自动续流",
+            items: const {
+              0: "关",
+              1: "开",
+            },
+            value: AppSettingsController.instance.douyuRenewRelay.value ? 1 : 0,
+            onChanged: (e) {
+              AppSettingsController.instance.setDouyuRenewRelay(e == 1);
+            },
+          ),
+        ),
+        AppStyle.vGap24,
+        Obx(
+          () => SettingsItemWidget(
             foucsNode: controller.scaleFoucsNode,
             autofocus: controller.scaleFoucsNode.isFoucsed.value,
             title: "画面比例",
