@@ -133,16 +133,28 @@ class _FakeCdn {
       }
       final done = Completer<void>();
       _streams.add(done);
-      unawaited(done.future.whenComplete(() {
-        unawaited(response.close().catchError((Object _) {}));
-      }));
+      // 中继随时可能主动断开（换流/播放器关闭），关闭响应一律忽略异常：
+      // 假 CDN 只负责喂数据，不承担真实服务端的错误语义。
+      unawaited(() async {
+        await done.future;
+        try {
+          await response.close();
+        } catch (_) {
+          // 已断开
+        }
+      }());
       const chunkSize = 4096;
       for (var offset = 0; offset < data.length; offset += chunkSize) {
         final end = (offset + chunkSize > data.length)
             ? data.length
             : offset + chunkSize;
-        response.add(Uint8List.sublistView(data, offset, end));
-        await response.flush();
+        try {
+          response.add(Uint8List.sublistView(data, offset, end));
+          await response.flush();
+        } catch (_) {
+          // 中继已断开，后续写入没有意义
+          return;
+        }
         if (done.isCompleted) {
           return;
         }
