@@ -1,3 +1,5 @@
+import 'package:meta/meta.dart';
+
 import '../model/live_play_url.dart';
 import 'flv_renew_relay.dart';
 
@@ -14,7 +16,8 @@ class FlvRenewPlayback {
   final List<String> urls;
 
   /// 仅供测试注入：用于断言「关闭开关时根本不会构造中继」，
-  /// 从而证明关闭路径不会绑定任何本地端口。生产代码不要设置它。
+  /// 从而证明关闭路径不会绑定任何本地端口。生产代码不得设置它。
+  @visibleForTesting
   static FlvRenewRelay Function()? debugRelayFactory;
 
   /// 是否是看起来可以直接走的 HTTP-FLV 地址。
