@@ -139,13 +139,61 @@ class DouyuSite implements LiveSite {
     var data = quality.data as DouyuPlayData;
 
     List<String> urls = [];
+    // 与 urls 一一对应的线路（cdn），续流时按同一线路重新解析
+    List<String> lines = [];
     for (var item in data.cdns) {
       var url = await getPlayUrl(detail.roomId, args, data.rate, item);
       if (url.isNotEmpty) {
         urls.add(url);
+        lines.add(item);
       }
     }
-    return LivePlayUrl(urls: urls);
+    return LivePlayUrl(
+      urls: urls,
+      // 斗鱼直链有约 300s 的服务端租约，续流中继会在到期前调用这里换新地址。
+      // 注意：签名串里的时间戳可用窗口只有约 5 分钟，所以必须重新签名，
+      // 不能复用进来时那份 data。
+      renewUrl: (lineIndex) {
+        if (lineIndex < 0 || lineIndex >= lines.length) {
+          return Future.value(null);
+        }
+        return renewPlayUrl(
+          roomId: detail.roomId,
+          rate: data.rate,
+          cdn: lines[lineIndex],
+        );
+      },
+    );
+  }
+
+  /// 续流取址：重新拉取加密脚本、重新签名，再解析指定线路的播放地址。
+  ///
+  /// 返回 null 表示本次取址失败（调用方会保留原连接或结束会话）。
+  Future<String?> renewPlayUrl({
+    required String roomId,
+    required int rate,
+    required String cdn,
+  }) async {
+    try {
+      var jsEncResult = await HttpClient.instance.getText(
+        "https://www.douyu.com/swf_api/homeH5Enc?rids=$roomId",
+        queryParameters: {},
+        header: {
+          'referer': 'https://www.douyu.com/$roomId',
+          'user-agent':
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36 Edg/114.0.1823.43",
+        },
+      );
+      var crptext = json.decode(jsEncResult)["data"]["room$roomId"].toString();
+      var data = DouyuSign.getSign(crptext, roomId);
+      var url = await getPlayUrl(roomId, data, rate, cdn);
+      if (url.isEmpty) {
+        return null;
+      }
+      return url;
+    } catch (e) {
+      return null;
+    }
   }
 
   Future<String> getPlayUrl(

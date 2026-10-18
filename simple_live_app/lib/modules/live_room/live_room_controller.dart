@@ -111,6 +111,13 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
   Timer? _douyuStreamRefreshTimer;
   static const _douyuStreamRefreshInterval = Duration(seconds: 270);
 
+  /// FLV 续流中继绑定：斗鱼直链有约 300s 的服务端租约，接入中继后由它在
+  /// 到期前预取新地址并做 tag 级无缝拼接，播放器全程只连本机地址。
+  FlvRenewPlayback? _renewPlayback;
+
+  /// 接入代次：并发接入时只让最后一次生效，避免互相把中继关掉。
+  int _renewEpoch = 0;
+
   @override
   void onInit() {
     WidgetsBinding.instance.addObserver(this);
@@ -408,6 +415,11 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       if (isBackground || !liveStatus.value) {
         return;
       }
+      // 已接入续流中继时不再定时换流：中继会在到期前自动无缝续接，
+      // 定时换流只会白白抖一下画面（中继不可用时才回落到这里）
+      if (_renewPlayback != null) {
+        return;
+      }
       Log.d("斗鱼定时换流地址");
       refreshPlayUrl();
     });
@@ -416,6 +428,31 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
   void stopDouyuStreamRefreshTimer() {
     _douyuStreamRefreshTimer?.cancel();
     _douyuStreamRefreshTimer = null;
+  }
+
+  /// 把播放地址接到 FLV 续流中继上；平台不支持续流时原样返回原始地址。
+  Future<List<String>> _applyRenewRelay(LivePlayUrl playUrl) async {
+    final epoch = ++_renewEpoch;
+    await _closeRenewRelay();
+    final playback = await FlvRenewPlayback.create(playUrl);
+    if (playback == null) {
+      return playUrl.urls;
+    }
+    if (epoch != _renewEpoch) {
+      // 期间有更新的接入请求，本次结果作废（不能把新中继顶掉）
+      await playback.close();
+      return playUrl.urls;
+    }
+    _renewPlayback = playback;
+    Log.d("已接入本地续流中继，播放地址将由中继自动续接");
+    return playback.urls;
+  }
+
+  Future<void> _closeRenewRelay() async {
+    _renewEpoch += 1;
+    final playback = _renewPlayback;
+    _renewPlayback = null;
+    await playback?.close();
   }
 
   /// 重新获取当前清晰度的流地址并重新播放（不重连弹幕、不重置清晰度）
@@ -431,19 +468,14 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       if (playUrl.urls.isEmpty) {
         return;
       }
-      playUrls.value = playUrl.urls;
+      playUrls.value = await _applyRenewRelay(playUrl);
       playHeaders = playUrl.headers;
+      // 歌单要整体重建：只塞一条会让 currentLineIndex 越界
+      currentLineIndex = 0;
+      currentLineInfo.value = "线路1";
       // 等待播放器缓冲旧流结束后再换流，避免打断当前播放
       await player.stream.buffering.firstWhere((e) => !e);
-      await initializePlayer();
-      await player.open(Playlist([
-        Media(
-          AppSettingsController.instance.playerForceHttps.value
-              ? playUrl.urls.first.replaceAll("http://", "https://")
-              : playUrl.urls.first,
-          httpHeaders: playHeaders,
-        ),
-      ]));
+      initPlaylist();
     } catch (e) {
       Log.logPrint(e);
     }
@@ -460,7 +492,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       SmartDialog.showToast("无法读取播放地址");
       return;
     }
-    playUrls.value = playUrl.urls;
+    playUrls.value = await _applyRenewRelay(playUrl);
     playHeaders = playUrl.headers;
     currentLineIndex = 0;
     currentLineInfo.value = "线路${currentLineIndex + 1}";
@@ -481,17 +513,24 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
     errorMsg.value = "";
 
     final mediaList = playUrls.map((url) {
-      var finalUrl = url;
-      if (AppSettingsController.instance.playerForceHttps.value) {
-        finalUrl = finalUrl.replaceAll("http://", "https://");
-      }
-      return Media(finalUrl, httpHeaders: playHeaders);
+      return Media(_forceHttps(url), httpHeaders: playHeaders);
     }).toList();
 
     // 初始化播放器并设置 ao 参数
     await initializePlayer();
 
     await player.open(Playlist(mediaList));
+  }
+
+  /// 按设置强制 HTTPS；本机续流中继地址不参与改写，否则播放器会连不上。
+  String _forceHttps(String url) {
+    if (!AppSettingsController.instance.playerForceHttps.value) {
+      return url;
+    }
+    if (FlvRenewRelay.isRelayUrl(url)) {
+      return url;
+    }
+    return url.replaceAll("http://", "https://");
   }
 
   void setPlayer() async {
@@ -1121,6 +1160,7 @@ ${error?.stackTrace}''');
     danmakuController = null;
     _liveDurationTimer?.cancel(); // 页面关闭时取消定时器
     stopDouyuStreamRefreshTimer(); // 页面关闭时取消斗鱼换流定时器
+    unawaited(_closeRenewRelay()); // 断开本地续流中继
     super.onClose();
   }
 }

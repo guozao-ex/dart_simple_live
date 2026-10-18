@@ -53,6 +53,13 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
 
   Map<String, String>? playHeaders;
 
+  /// FLV 续流中继绑定：斗鱼直链有约 300s 的服务端租约，接入中继后由它在
+  /// 到期前预取新地址并做 tag 级无缝拼接，播放器全程只连本机地址。
+  FlvRenewPlayback? _renewPlayback;
+
+  /// 接入代次：并发接入时只让最后一次生效，避免互相把中继关掉。
+  int _renewEpoch = 0;
+
   /// 当前线路
   var currentLineIndex = -1;
   var currentLineInfo = "".obs;
@@ -211,13 +218,38 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       SmartDialog.showToast("无法读取播放地址");
       return;
     }
-    playUrls.value = playUrl.urls;
+    playUrls.value = await _applyRenewRelay(playUrl);
     playHeaders = playUrl.headers;
     currentLineIndex = 0;
     currentLineInfo.value = "线路${currentLineIndex + 1}";
     //重置错误次数
     mediaErrorRetryCount = 0;
     setPlayer();
+  }
+
+  /// 把播放地址接到 FLV 续流中继上；平台不支持续流时原样返回原始地址。
+  Future<List<String>> _applyRenewRelay(LivePlayUrl playUrl) async {
+    final epoch = ++_renewEpoch;
+    await _closeRenewRelay();
+    final playback = await FlvRenewPlayback.create(playUrl);
+    if (playback == null) {
+      return playUrl.urls;
+    }
+    if (epoch != _renewEpoch) {
+      // 期间有更新的接入请求，本次结果作废（不能把新中继顶掉）
+      await playback.close();
+      return playUrl.urls;
+    }
+    _renewPlayback = playback;
+    Log.d("已接入本地续流中继，播放地址将由中继自动续接");
+    return playback.urls;
+  }
+
+  Future<void> _closeRenewRelay() async {
+    _renewEpoch += 1;
+    final playback = _renewPlayback;
+    _renewPlayback = null;
+    await playback?.close();
   }
 
   void changePlayLine(int index) {
@@ -442,6 +474,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
     liveDanmaku.stop();
 
     danmakuController = null;
+    unawaited(_closeRenewRelay()); // 断开本地续流中继
     super.onClose();
   }
 }
