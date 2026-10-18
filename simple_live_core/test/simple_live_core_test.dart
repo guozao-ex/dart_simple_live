@@ -1,9 +1,17 @@
+import 'dart:io';
+
 import 'package:simple_live_core/simple_live_core.dart';
 import 'package:test/test.dart';
 
+/// 这些用例直接打真实平台接口，平台偶发返回空或改版时会假失败，
+/// 因此默认跳过；设置 RUN_PLATFORM_SMOKE=1 后按需运行。
+final String? _skipReason = Platform.environment['RUN_PLATFORM_SMOKE'] == null
+    ? '需要真实平台接口：设置 RUN_PLATFORM_SMOKE=1 后运行'
+    : null;
+
 void testSite(LiveSite site) async {
   var rooms = <LiveRoomItem>[];
-  test('getRecommendRooms', () async {
+  test('getRecommendRooms', skip: _skipReason, () async {
     final result = await site.getRecommendRooms();
     expect(result, isNotNull);
     expect(result.items, isNotEmpty);
@@ -18,7 +26,7 @@ void testSite(LiveSite site) async {
   });
 
   var categores = <LiveCategory>[];
-  test('getCategores', () async {
+  test('getCategores', skip: _skipReason, () async {
     categores = await site.getCategores();
     expect(categores, isNotEmpty);
     for (var item in categores) {
@@ -32,7 +40,7 @@ void testSite(LiveSite site) async {
     }
   });
 
-  test('getCategoryRooms', () async {
+  test('getCategoryRooms', skip: _skipReason, () async {
     var result = await site.getCategoryRooms(categores.first.children.first);
     expect(result, isNotNull);
     expect(result.items, isNotEmpty);
@@ -45,7 +53,7 @@ void testSite(LiveSite site) async {
     }
   });
 
-  test('searchRooms', () async {
+  test('searchRooms', skip: _skipReason, () async {
     var result = await site.searchRooms('LOL');
     expect(result, isNotNull);
     expect(result.items, isNotEmpty);
@@ -58,7 +66,7 @@ void testSite(LiveSite site) async {
     }
   });
 
-  test('searchAnchors', () async {
+  test('searchAnchors', skip: _skipReason, () async {
     // 跳过抖音测试此项
     if (site is DouyinSite) {
       return;
@@ -74,7 +82,7 @@ void testSite(LiveSite site) async {
   });
 
   LiveRoomDetail? roomDetail;
-  test('getRoomDetail', () async {
+  test('getRoomDetail', skip: _skipReason, () async {
     roomDetail = await site.getRoomDetail(roomId: rooms.first.roomId);
     expect(roomDetail, isNotNull);
     expect(roomDetail?.roomId, isNotEmpty);
@@ -83,7 +91,7 @@ void testSite(LiveSite site) async {
   });
 
   List<LivePlayQuality> playQualities = [];
-  test('getPlayQuality', () async {
+  test('getPlayQuality', skip: _skipReason, () async {
     playQualities = await site.getPlayQualites(detail: roomDetail!);
     expect(playQualities, isNotEmpty);
     for (var item in playQualities) {
@@ -93,7 +101,7 @@ void testSite(LiveSite site) async {
     }
   });
 
-  test('getPlayUrls', () async {
+  test('getPlayUrls', skip: _skipReason, () async {
     var url = await site.getPlayUrls(
         detail: roomDetail!, quality: playQualities.first);
     expect(url, isNotNull);
@@ -101,7 +109,7 @@ void testSite(LiveSite site) async {
     print(url.urls.join('\n\n'));
   });
 
-  test('getDanmaku', () async {
+  test('getDanmaku', skip: _skipReason, () async {
     var danmaku = site.getDanmaku();
     expect(danmaku, isNotNull);
     expect(danmaku, isA<LiveDanmaku>());

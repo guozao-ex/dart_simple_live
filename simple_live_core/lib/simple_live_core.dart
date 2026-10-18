@@ -23,3 +23,4 @@ export 'src/model/live_anchor_item.dart';
 export 'src/model/live_play_url.dart';
 export 'src/player/flv_renew_relay.dart';
 export 'src/player/flv_renew_playback.dart';
+export 'src/player/douyu_renew_fallback.dart';

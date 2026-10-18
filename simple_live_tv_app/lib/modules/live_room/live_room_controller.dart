@@ -60,10 +60,8 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
   /// 接入代次：并发接入时只让最后一次生效，避免互相把中继关掉。
   int _renewEpoch = 0;
 
-  /// 斗鱼定时换流兜底：中继未接入（例如用户关闭自动续流）时，每 270 秒
-  /// 重新取一次地址，避免流地址到期后断流。与手机端行为保持一致。
-  Timer? _douyuStreamRefreshTimer;
-  static const _douyuStreamRefreshInterval = Duration(seconds: 270);
+  /// 斗鱼定时换流兜底：调度逻辑在 core（可单测），中继不可用时每 270 秒换一次流。
+  DouyuRenewFallback? _douyuRenewFallback;
 
   /// 当前线路
   var currentLineIndex = -1;
@@ -267,23 +265,20 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
     if (site.id != Constant.kDouyu) {
       return;
     }
-    stopDouyuStreamRefreshTimer();
-    _douyuStreamRefreshTimer =
-        Timer.periodic(_douyuStreamRefreshInterval, (_) async {
-      if (isBackground || !liveStatus.value) {
-        return;
-      }
-      // 已接入续流中继时由中继负责续接，定时换流只会白白抖一下画面
-      if (_renewPlayback != null) {
-        return;
-      }
-      await refreshPlayUrl();
-    });
+    _douyuRenewFallback ??= DouyuRenewFallback(
+      // 中继接入时由中继负责续接；后台或未开播时也不换流
+      shouldRun: () =>
+          !isBackground && liveStatus.value && _renewPlayback == null,
+      onRenew: () {
+        Log.d("斗鱼定时换流地址");
+        unawaited(refreshPlayUrl());
+      },
+    );
+    _douyuRenewFallback!.start();
   }
 
   void stopDouyuStreamRefreshTimer() {
-    _douyuStreamRefreshTimer?.cancel();
-    _douyuStreamRefreshTimer = null;
+    _douyuRenewFallback?.stop();
   }
 
   /// 重新获取当前清晰度的流地址并重新播放（不重连弹幕、不重置清晰度）
