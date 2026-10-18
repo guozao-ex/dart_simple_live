@@ -60,6 +60,11 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
   /// 接入代次：并发接入时只让最后一次生效，避免互相把中继关掉。
   int _renewEpoch = 0;
 
+  /// 斗鱼定时换流兜底：中继未接入（例如用户关闭自动续流）时，每 270 秒
+  /// 重新取一次地址，避免流地址到期后断流。与手机端行为保持一致。
+  Timer? _douyuStreamRefreshTimer;
+  static const _douyuStreamRefreshInterval = Duration(seconds: 270);
+
   /// 当前线路
   var currentLineIndex = -1;
   var currentLineInfo = "".obs;
@@ -159,6 +164,9 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       liveStatus.value = detail.value!.status || detail.value!.isRecord;
       if (liveStatus.value) {
         getPlayQualites();
+        startDouyuStreamRefreshTimer();
+      } else {
+        stopDouyuStreamRefreshTimer();
       }
       if (detail.value!.isRecord) {
         SmartDialog.showToast("当前主播未开播，正在轮播录像");
@@ -231,7 +239,10 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
   Future<List<String>> _applyRenewRelay(LivePlayUrl playUrl) async {
     final epoch = ++_renewEpoch;
     await _closeRenewRelay();
-    final playback = await FlvRenewPlayback.create(playUrl);
+    final playback = await FlvRenewPlayback.create(
+      playUrl,
+      enabled: AppSettingsController.instance.douyuRenewRelay.value,
+    );
     if (playback == null) {
       return playUrl.urls;
     }
@@ -250,6 +261,52 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
     final playback = _renewPlayback;
     _renewPlayback = null;
     await playback?.close();
+  }
+
+  void startDouyuStreamRefreshTimer() {
+    if (site.id != Constant.kDouyu) {
+      return;
+    }
+    stopDouyuStreamRefreshTimer();
+    _douyuStreamRefreshTimer =
+        Timer.periodic(_douyuStreamRefreshInterval, (_) async {
+      if (isBackground || !liveStatus.value) {
+        return;
+      }
+      // 已接入续流中继时由中继负责续接，定时换流只会白白抖一下画面
+      if (_renewPlayback != null) {
+        return;
+      }
+      await refreshPlayUrl();
+    });
+  }
+
+  void stopDouyuStreamRefreshTimer() {
+    _douyuStreamRefreshTimer?.cancel();
+    _douyuStreamRefreshTimer = null;
+  }
+
+  /// 重新获取当前清晰度的流地址并重新播放（不重连弹幕、不重置清晰度）
+  Future<void> refreshPlayUrl() async {
+    if (qualites.isEmpty || currentQuality < 0) {
+      return;
+    }
+    try {
+      final playUrl = await site.liveSite.getPlayUrls(
+        detail: detail.value!,
+        quality: qualites[currentQuality],
+      );
+      if (playUrl.urls.isEmpty) {
+        return;
+      }
+      playUrls.value = await _applyRenewRelay(playUrl);
+      playHeaders = playUrl.headers;
+      currentLineIndex = 0;
+      currentLineInfo.value = "线路1";
+      setPlayer();
+    } catch (e) {
+      Log.logPrint(e);
+    }
   }
 
   void changePlayLine(int index) {
@@ -474,6 +531,7 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
     liveDanmaku.stop();
 
     danmakuController = null;
+    stopDouyuStreamRefreshTimer(); // 关闭定时换流兜底
     unawaited(_closeRenewRelay()); // 断开本地续流中继
     super.onClose();
   }

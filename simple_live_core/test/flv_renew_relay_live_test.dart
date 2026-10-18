@@ -9,7 +9,8 @@ import 'package:test/test.dart';
 ///
 /// 默认跳过，需要显式开启（会真实耗流量）：
 ///   cd simple_live_core
-///   DOUYU_SOAK_ROOM=71415 dart test test/flv_renew_relay_live_test.dart
+///   DOUYU_SOAK_ROOM=auto dart test test/flv_renew_relay_live_test.dart
+///   （房间号可写死；传 auto 时由 test/tool/douyu_url.cjs 从推荐列表挑一个在播房间）
 ///
 /// 依赖本机有 node：用 test/tool/douyu_url.cjs 重新签名取址，模拟 App 的续流取址。
 void main() {
@@ -125,7 +126,10 @@ void main() {
       expect(backwards, 0, reason: '时间戳不允许倒退');
       expect(span, greaterThanOrEqualTo((seconds - 15) * 1000),
           reason: '时间轴应跟着真实时间推进，说明全程没有长时间断流');
-      expect(maxGap, lessThan(10000), reason: '视频帧间隔不应出现 10s 级空洞');
+      expect(maxGap, lessThan(1000),
+          reason: '视频帧间隔应与需求 A6 一致：小于 1000ms');
+      expect(elapsed.inSeconds, greaterThanOrEqualTo(seconds - 5),
+          reason: '应跑满设定时长；提前结束说明上游提前 onDone（例如房间下播）');
       expect(renewCount, greaterThanOrEqualTo(1), reason: '跨过 300s 应至少续流一次');
 
       await relay.close();

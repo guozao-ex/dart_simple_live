@@ -434,7 +434,10 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
   Future<List<String>> _applyRenewRelay(LivePlayUrl playUrl) async {
     final epoch = ++_renewEpoch;
     await _closeRenewRelay();
-    final playback = await FlvRenewPlayback.create(playUrl);
+    final playback = await FlvRenewPlayback.create(
+      playUrl,
+      enabled: AppSettingsController.instance.douyuRenewRelay.value,
+    );
     if (playback == null) {
       return playUrl.urls;
     }

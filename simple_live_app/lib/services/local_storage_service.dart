@@ -105,6 +105,9 @@ class LocalStorageService extends GetxService {
   /// 播放器强制使用HTTPS
   static const String kPlayerForceHttps = "PlayerForceHttps";
 
+  /// 斗鱼自动续流开关（默认开启）
+  static const String kDouyuRenewRelay = "DouyuRenewRelay";
+
   /// 自动全屏
   static const String kAutoFullScreen = "AutoFullScreen";
 

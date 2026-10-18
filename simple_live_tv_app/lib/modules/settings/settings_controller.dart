@@ -38,6 +38,7 @@ class SettingsController extends BaseController
   }
   var hardwareDecodeFocusNode = AppFocusNode()..isFoucsed.value = true;
   var compatibleModeFocusNode = AppFocusNode();
+  var douyuRenewRelayFocusNode = AppFocusNode();
   var scaleFoucsNode = AppFocusNode();
   var defaultQualityFocusNode = AppFocusNode();
   var danmakuFoucsNode = AppFocusNode();

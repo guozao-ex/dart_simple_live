@@ -90,6 +90,9 @@ class LocalStorageService extends GetxService {
   /// 播放器兼容模式
   static const String kPlayerCompatMode = "PlayerCompatMode";
 
+  /// 斗鱼自动续流开关（默认开启）
+  static const String kDouyuRenewRelay = "DouyuRenewRelay";
+
   /// 播放器后台自动暂停
   static const String kPlayerAutoPause = "PlayerAutoPause";
 

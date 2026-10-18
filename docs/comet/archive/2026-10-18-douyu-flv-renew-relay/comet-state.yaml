@@ -1,0 +1,395 @@
+schema: comet.native.v4
+name: douyu-flv-renew-relay
+language: zh-CN
+phase: archive
+status: done
+state_version: 18
+brief: brief.md
+document_constraints_version: 3
+shape_confirmation_hash: a7a6e4d1480c29e97d492ce8badae6fb741be733a66cbff6687efe4c2c66ce2d
+spec_changes:
+  - capability: douyu-flv-renew
+    operation: create
+    source: specs/douyu-flv-renew/spec.md
+workspace:
+  isolation: worktree
+  change_branch: comet/douyu-flv-renew-relay
+  target_branch: master
+  finish: merge
+loop:
+  stage: done
+  goal_cycle: 2
+  iteration: 2
+  attempt: 1
+  retry_epoch: 0
+  failed_iteration_count: 0
+  no_progress_count: 0
+  execution_failure_count: 0
+  previous_unresolved_ids: []
+  next_action: null
+acceptance:
+  - id: A1
+    source: brief.md
+    text: "关闭开关时，斗鱼播放不再接入本机中继：FlvRenewPlayback.create(playUrl, enabled: false) 返回
+      null，且不建立本地监听端口。"
+    result: passed
+    reason:
+      text: create() 首句 if (!enabled) return null，早于 renewUrl 读取、relay 构造与
+        relay.start()（create 路径唯一 HttpServer.bind 点）；新增用例注入 debugRelayFactory
+        计数：enabled:false 时返回 null、续流取址回调 0 次、中继构造 0 次，不传 enabled 时构造 1
+        次并返回本机中继地址（core-relay-tests 12/12 通过）。
+      truncated: false
+  - id: A2
+    source: brief.md
+    text: 开关默认开启：两端设置项初始值为 true，core 的 create 默认参数为 true。
+    result: passed
+    reason:
+      text: core create(playUrl, {bool enabled = true}) 默认开启；手机端与 TV 端均
+        douyuRenewRelay = true.obs 且 LocalStorageService 读取缺省
+        true，两端设置页各暴露「斗鱼自动续流」开关，两处生产调用点均透传该值。
+      truncated: false
+  - id: A3
+    source: brief.md
+    text: 开启时既有行为不变：core 现有续流用例（含假 CDN 端到端）全部通过。
+    result: passed
+    reason:
+      text: "工作树 vs 1981d16 的 core/test 差异：11 条既有用例一条未删、无断言放宽（仅新鲜度等待
+        1100→1500ms、读流超时显式 6s，断言仍为 200 + 有内容），新增 1 条开关用例；core-relay-tests 日志
+        +12: All tests passed!，含假 CDN 端到端。"
+      truncated: false
+  - id: A4
+    source: brief.md
+    text: 三个包静态检查零问题：simple_live_core 的 dart analyze、手机端与 TV 端的 flutter analyze。
+    result: passed
+    reason:
+      text: core dart analyze、手机端与 TV 端 flutter analyze lib 三项 Runtime 检查均 exit 0，日志均为
+        No issues found!；13 条 lint 清理逐行核对为机械改动：删 2
+        个未用导入、HYSDK_UA→hysdkUa（全仓无残留引用）、tars 三文件仅改
+        readFrom/writeTo/displayAsString 的参数与局部变量名（字段名与 tag 号未动）、多余字符串花括号
+        ${antiCode}→$antiCode。
+      truncated: false
+  - id: A5
+    source: brief.md
+    text: 原生可运行产物：Windows 桌面 release 构建成功。
+    result: passed
+    reason:
+      text: win-build（flutter build windows --release，cwd simple_live_app）exit 0，日志 √
+        Built build\windows\x64\runner\Release\simple_live_app.exe；产物 mtime
+        18:14 落在本候选构建窗口 10:12:31–10:14:01Z（本地 18:12:31–18:14:01）内，Release/data
+        同步更新。
+      truncated: false
+  - id: A6
+    source: brief.md
+    text: 真实斗鱼流在开启状态下跨过 300s 租约不中断：浸泡 360s，续流取址至少 1 次、视频帧最大间隔小于 1000ms、时间戳零倒退。
+    result: passed
+    reason:
+      text: douyu-soak（DOUYU_SOAK_ROOM=auto DOUYU_SOAK_SECONDS=360，376.7s）exit 0，日志
+        [soak] 时长=360s tag=24712 时间跨度=8475545ms 最大视频间隔=40ms 倒退=0 续流次数=1（第 295s
+        触发）：跑满 360s≥355s、maxGap 40ms<1000ms、零倒退、跨 300s 租约续流 ≥1
+        次四项断言全成立（断言失败会非零退出）。
+      truncated: false
+builder_handoff:
+  candidate_id: a672aabe-dc79-4d2c-bc86-3b93cf6cc7d3
+  identity_provider: skill-coordinated
+  builder_execution_ref: skill-coordinated:builder:bb45f0f2-7d0e-4c6c-a52d-914b203650a8
+  iteration: 2
+  summary:
+    text: 按用户要求全量修复上一轮 Verifier 报出的 5 条风险后重新提交候选：(1) 浸泡测试的视频间隔断言从 <10000ms 收紧到
+      <1000ms，与需求 A6 口径一致，并新增「跑满设定时长」断言，防止房间下播导致提前 onDone 被当成通过；(2)
+      修掉开关用例里被写成字面量 \${cdn.port} 的假 CDN 地址（未插值，实际登记无效地址）；(3) TV 端补上 270s
+      定时换流兜底，与手机端一致，使「关闭开关后回落到定时换流」在两端都成立；(4) A1 的「不绑定端口」改为行为性断言：给 create 注入
+      relay 构造器计数，关闭时断言构造次数为 0、开启时为 1；(5) 「auto
+      选房」依赖由新增的时长断言兜底。实现本体（中继与开关语义）未改需求，仅修测试与 TV 端兜底。开发期检查：core dart
+      analyze（lib+test）零问题、core 单测 12/12、两端 flutter analyze 零问题。
+    truncated: false
+  addressed_acceptance_ids:
+    - A1
+    - A2
+    - A3
+    - A4
+    - A5
+    - A6
+  acceptance_review:
+    - id: A1
+      status: implemented-with-evidence
+      evidence:
+        - simple_live_core/lib/src/player/flv_renew_playback.dart：create() 的 if
+          (!enabled) return null 是函数第一条语句，早于 renewUrl 读取、relay.start()（唯一
+          HttpServer.bind 点）与 register()
+        - simple_live_core/test/flv_renew_relay_test.dart「开关关闭时不接入中继，且不调用续流取址」：注入
+          debugRelayFactory 计数后断言 —— 关闭时返回 null、续流取址计数 0、且中继构造次数为
+          0（即不会绑定任何本地端口）；不传 enabled 时构造次数为 1 且返回本机中继地址
+      note: 关闭开关时不创建 HttpServer、不建立上游连接、不调用续流取址；两端调用方拿到 null 后继续使用原始直连地址（手机端并保留 270s
+        定时换流兜底）。本轮把「不绑定端口」从静态推断升级为行为性断言。
+    - id: A2
+      status: implemented-with-evidence
+      evidence:
+        - simple_live_core/lib/src/player/flv_renew_playback.dart：create(...,
+          {bool enabled = true}) 默认参数为 true，并由用例中「不传 enabled → 返回非空本机中继地址」断言覆盖
+        - simple_live_app/lib/app/controller/app_settings_controller.dart：douyuRenewRelay
+          默认 true.obs，LocalStorageService.kDouyuRenewRelay 读取缺省
+          true，SettingsSwitch「斗鱼自动续流」暴露在播放设置页
+        - simple_live_tv_app/lib/app/controller/app_settings_controller.dart：同样
+          true.obs 与缺省 true；TV 设置页新增「斗鱼自动续流」开关项（关/开）
+      note: 两端首次安装即为开启；手机端与 TV 端默认值、设置项与 core 默认参数三者一致。
+    - id: A3
+      status: implemented-with-evidence
+      evidence:
+        - simple_live_core：dart test test/flv_renew_relay_test.dart → 12/12 通过（原
+          11 条续流用例全部保留，本轮只新增 1 条开关用例与 2 条断言）
+        - 本轮对既有用例的唯一改动是 go-无误的余量调整（跨会话用例等待 1100ms→1500ms、读流超时 6s），未削弱任何既有断言
+      note: 开启状态下的续接算法、失败回落与超时策略与本轮之前完全一致；本轮修改集中在测试断言与 TV 端兜底定时器。
+    - id: A4
+      status: implemented-with-evidence
+      evidence:
+        - simple_live_core：dart analyze lib test → No issues found
+        - simple_live_app：flutter analyze lib → No issues found
+        - simple_live_tv_app：flutter analyze lib → No issues found
+      note: core 的 13 条既有 lint 已按机械方式清理（删 2 个未用导入、HYSDK_UA→hysdkUa 全量同步、tars 局部变量
+        _is/_os/_ds 改名、去 1 处多余花括号）；本轮未新增 lint 问题。
+    - id: A5
+      status: implemented-with-evidence
+      evidence:
+        - 上一候选（含同一份手机端开关改动）win-build 检查通过：flutter build windows --release 成功并产出
+          build/windows/x64/runner/Release/simple_live_app.exe
+        - 本轮修复未改动手机端与 windows/ 下任何文件（改动集中在 core 测试与 TV 端控制器），构建路径不受影响；Runtime
+          将在本候选上重新执行 win-build
+      note: Windows 构建为原生可运行证据；本候选未触碰该构建路径。
+    - id: A6
+      status: implemented-with-evidence
+      evidence:
+        - 上一候选 douyu-soak 通过：时长=360s、第 295s 触发续流、零倒退、最大视频间隔 40ms（远低于本轮收紧后的
+          1000ms 阈值）
+        - simple_live_core/test/flv_renew_relay_live_test.dart 本轮收紧：maxGap 断言
+          10000ms→1000ms，并新增 elapsed ≥ 设定时长-5s 断言，避免房间下播提前结束被误判通过
+        - test/tool/douyu_url.cjs 的 auto
+          选房模式继续用于稳态取址（从推荐列表挑在播房间，避免写死房间下播后失效）；Runtime 将在本候选上重新执行 douyu-soak
+      note: 浸泡在真实斗鱼 CDN 上执行，含真实重新签名取址；本轮把测试阈值与需求口径对齐。
+  checks:
+    - name:
+        text: core dart analyze（lib+test）
+        truncated: false
+      result: passed
+      note:
+        text: No issues found
+        truncated: false
+    - name:
+        text: core 单测（续流用例）
+        truncated: false
+      result: passed
+      note:
+        text: 12/12 通过，含开关用例的行为性断言
+        truncated: false
+    - name:
+        text: 手机端 flutter analyze
+        truncated: false
+      result: passed
+      note:
+        text: No issues found
+        truncated: false
+    - name:
+        text: TV 端 flutter analyze
+        truncated: false
+      result: passed
+      note:
+        text: No issues found（含新增的 270s 兜底定时器）
+        truncated: false
+    - name:
+        text: Windows release 构建 / 真实流浸泡
+        truncated: false
+      result: passed
+      note:
+        text: 上一候选通过；本候选由 Runtime 计划重新执行
+        truncated: false
+  checks_truncated: false
+  known_limits:
+    - text: 未做真机/图形界面的人工长时间观看（已确认为非目标）；本轮只交付可运行的原生构建产物。
+      truncated: false
+    - text: 浸泡依赖本机 node 与斗鱼线上在播房间（auto 选房）；平台接口异常时该检查会失败而非静默跳过，且新增的时长断言可挡住房间中途下播。
+      truncated: false
+    - text: core 既有 13 条 lint 的清理涉及 brief 目录结构未列出的 huya 模块（为满足 A4 字面要求），已在 note 中说明。
+      truncated: false
+    - text: TV 端的 270s 定时换流兜底为本轮新增，其行为与手机端一致，但两端都没有自动化用例覆盖定时器本身（只能靠代码核对）。
+      truncated: false
+  known_limits_truncated: false
+  review: null
+  submitted_at: 2026-10-18T10:04:57.783Z
+blockers: []
+verification:
+  candidate_id: a672aabe-dc79-4d2c-bc86-3b93cf6cc7d3
+  identity_provider: skill-coordinated
+  verifier_execution_ref: skill-coordinated:verifier:9cbaa413-c08c-4901-a404-1ff65f9e2d52
+  iteration: 2
+  attempt: 1
+  assurance: skill-coordinated
+  verdict: pass
+  checks:
+    - id: core-analyze
+      name:
+        text: core 静态检查
+        truncated: false
+      argv_display:
+        - text: analyze
+          truncated: false
+      argv_truncated: false
+      cwd_ref: simple_live_core
+      status: passed
+      exit_code: 0
+      duration_ms: 2691
+    - id: core-relay-tests
+      name:
+        text: core 续流用例
+        truncated: false
+      argv_display:
+        - text: test
+          truncated: false
+        - text: test/flv_renew_relay_test.dart
+          truncated: false
+      argv_truncated: false
+      cwd_ref: simple_live_core
+      status: passed
+      exit_code: 0
+      duration_ms: 41521
+    - id: app-analyze
+      name:
+        text: 手机端静态检查
+        truncated: false
+      argv_display:
+        - text: analyze
+          truncated: false
+        - text: lib
+          truncated: false
+      argv_truncated: false
+      cwd_ref: simple_live_app
+      status: passed
+      exit_code: 0
+      duration_ms: 10862
+    - id: tv-analyze
+      name:
+        text: TV 端静态检查
+        truncated: false
+      argv_display:
+        - text: analyze
+          truncated: false
+        - text: lib
+          truncated: false
+      argv_truncated: false
+      cwd_ref: simple_live_tv_app
+      status: passed
+      exit_code: 0
+      duration_ms: 12004
+    - id: douyu-soak
+      name:
+        text: 真实斗鱼流浸泡 360s
+        truncated: false
+      argv_display:
+        - text: -lc
+          truncated: false
+        - text: DOUYU_SOAK_ROOM=auto DOUYU_SOAK_SECONDS=360 dart test
+            test/flv_renew_relay_live_test.dart
+          truncated: false
+      argv_truncated: false
+      cwd_ref: simple_live_core
+      status: passed
+      exit_code: 0
+      duration_ms: 376702
+    - id: win-build
+      name:
+        text: Windows release 构建
+        truncated: false
+      argv_display:
+        - text: build
+          truncated: false
+        - text: windows
+          truncated: false
+        - text: --release
+          truncated: false
+      argv_truncated: false
+      cwd_ref: simple_live_app
+      status: passed
+      exit_code: 0
+      duration_ms: 90668
+  summary:
+    text: 6/6 全部通过：开关在 core 首句早退且由构造计数行为性证明（关闭 0 次 / 开启 1 次）、两端默认 true 并透传、既有 11
+      条用例零削弱且 12/12 通过、三包 analyze 零问题（13 条 lint 纯机械）、Windows release
+      产物落在本轮构建窗口、360s 真实浸泡于 295s 续流且最大视频间隔 40ms、零倒退；上一轮 5 条风险全部修好。
+    truncated: false
+  risks:
+    - text: FlvRenewPlayback.debugRelayFactory
+        是为测试注入的可变公共静态字段，随库进入生产代码（当前仅测试用例使用，生产调用点不设置）；若日后有生产代码误设会改变中继构造，建议后续加
+        @visibleForTesting 或改走构造注入。
+      truncated: false
+    - text: 本候选只存在于工作树（HEAD=1981d16 为基线提交，改动未提交），没有提交哈希钉住被验收版本；证据靠文件 mtime（全部
+        ≤18:03）早于检查窗口（18:05:06–18:14:01Z）与 Runtime
+        指纹绑定。归档提交必须原样落入当前工作树，检查后任何改动都会使本轮证据失效。
+      truncated: false
+    - text: 两端 270s 定时换流兜底都没有自动化用例覆盖（只能靠代码核对）；TV 端与手机端一致地采用「定时回调内判 _renewPlayback !=
+        null 即跳过」而非取消定时器，语义等价于 spec 的「启用中继时停用」，但非字面 cancel。
+      truncated: false
+    - text: maxGap 阈值收紧到 <1000ms 后，浸泡测试对真实 CDN 的瞬时抖动更敏感（本次实测 40ms，余量充足）；真实卡顿 >1s
+        时测试会失败而非静默通过——符合 A6 口径，但会带来偶发红灯。
+      truncated: false
+    - text: 仓库根多出未跟踪的 handoff2.json / handoff2_result.json /
+        handoff2_result.err（Builder/Runner 产物，不在 brief 的文件清单内）；归档提交时不应带入。
+      truncated: false
+    - text: 三处 flutter 生成的 generated_plugin_registrant.* / generated_plugins.cmake 在
+        git status 显示已修改，但规范化后与基线内容一致（疑似工具重写导致的 EOL 抖动），无需评审，会给归档提交带来噪声。
+      truncated: false
+  risks_truncated: false
+  completed_at: 2026-10-18T10:20:22.971Z
+history:
+  - goal_cycle: 1
+    iteration: 0
+    attempt: 0
+    outcome: recovery
+    unresolved_ids: []
+    summary:
+      text: Native confirmed acceptance criteria changed
+      truncated: false
+    completed_at: 2026-10-18T09:02:36.995Z
+  - goal_cycle: 2
+    iteration: 1
+    attempt: 1
+    outcome: pass
+    unresolved_ids: []
+    summary:
+      text: A1-A6 全部通过：开关在 core 早退、两端默认 true 且透传，既有 11 个续流用例未被削弱并随新增开关用例 12/12
+        通过，三包静态检查 exit 0（13 条 huya/tars lint 经核对属机械改名）、Windows release
+        产物为构建窗口内新生成，真实斗鱼流 360s 浸泡在 295s 触发续流、时间跨度 331s、零倒退、最大视频间隔 40ms。
+      truncated: false
+    completed_at: 2026-10-18T09:56:58.917Z
+  - goal_cycle: 2
+    iteration: 1
+    attempt: 1
+    outcome: recovery
+    unresolved_ids: []
+    summary:
+      text: Verifier 判定 6/6 通过，但用户要求先全量修复其报出的 5 条风险（测试阈值/测试瑕疵/TV 端缺 270s
+        兜底/浸泡未断言跑满/端口绑定仅静态推得）再归档，故保留已确认需求、返回 Build 修改实现
+      truncated: false
+    completed_at: 2026-10-18T10:00:02.261Z
+  - goal_cycle: 2
+    iteration: 2
+    attempt: 1
+    outcome: pass
+    unresolved_ids: []
+    summary:
+      text: 6/6 全部通过：开关在 core 首句早退且由构造计数行为性证明（关闭 0 次 / 开启 1 次）、两端默认 true 并透传、既有 11
+        条用例零削弱且 12/12 通过、三包 analyze 零问题（13 条 lint 纯机械）、Windows release
+        产物落在本轮构建窗口、360s 真实浸泡于 295s 续流且最大视频间隔 40ms、零倒退；上一轮 5 条风险全部修好。
+      truncated: false
+    completed_at: 2026-10-18T10:20:22.971Z
+history_overflow:
+  dropped_entries: 0
+  first_dropped_at: null
+  last_dropped_at: null
+  outcome_counts:
+    pass: 0
+    fail: 0
+    blocked: 0
+    execution-error: 0
+    recovery: 0
+verification_result: pass
+verification_report: verification.md
+archived: true
+created_at: 2026-10-18T08:56:17.160Z

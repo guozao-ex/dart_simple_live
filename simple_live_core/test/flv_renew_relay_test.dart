@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:typed_data';
 
+import 'package:simple_live_core/src/model/live_play_url.dart';
+import 'package:simple_live_core/src/player/flv_renew_playback.dart';
 import 'package:simple_live_core/src/player/flv_renew_relay.dart';
 import 'package:test/test.dart';
 
@@ -410,6 +412,40 @@ void main() {
       expect(tags.any((tag) => tag.$3 == 2), isFalse);
     });
 
+    test('开关关闭时不接入中继，且不调用续流取址', () async {
+      final cdn = _FakeCdn({1: _segment(segment: 1, from: 0, to: 500)});
+      await cdn.start();
+      var renewCount = 0;
+      // 用注入的构造器记录「有没有真的去构造中继」，以此反证关闭路径不绑定端口
+      var relayConstructed = 0;
+      FlvRenewPlayback.debugRelayFactory = () {
+        relayConstructed += 1;
+        return FlvRenewRelay();
+      };
+      addTearDown(() => FlvRenewPlayback.debugRelayFactory = null);
+      final playUrl = LivePlayUrl(
+        urls: ['http://127.0.0.1:${cdn.port}/1.flv'],
+        renewUrl: (lineIndex) async {
+          renewCount += 1;
+          return 'http://127.0.0.1:${cdn.port}/1.flv';
+        },
+      );
+
+      final off = await FlvRenewPlayback.create(playUrl, enabled: false);
+      expect(off, isNull, reason: '关闭开关时不应接入中继');
+      expect(renewCount, 0, reason: '关闭开关时不应调用续流取址');
+      expect(relayConstructed, 0, reason: '关闭开关时不应构造中继（即不会绑定任何本地端口）');
+
+      // 默认开启：不传 enabled 时按接入处理
+      final on = await FlvRenewPlayback.create(playUrl);
+      expect(on, isNotNull, reason: '默认应为开启');
+      expect(relayConstructed, 1, reason: '开启时应构造并启动中继');
+      expect(on!.urls.first.startsWith('http://127.0.0.1:'), isTrue);
+      expect(FlvRenewRelay.isRelayUrl(on.urls.first), isTrue);
+      await on.close();
+      await cdn.stop();
+    });
+
     test('未登记的地址返回 404，中继地址可被识别', () async {
       final relay = FlvRenewRelay();
       await relay.start();
@@ -447,10 +483,11 @@ void main() {
           return good;
         },
       );
-      // 等过新鲜度窗口（ttl - lead = 800ms）
-      await Future<void>.delayed(const Duration(milliseconds: 1100));
+      // 等过新鲜度窗口（ttl - lead = 800ms），留足余量避免时序抖动
+      await Future<void>.delayed(const Duration(milliseconds: 1500));
 
-      final (status, first) = await _readStreamStatus(url);
+      final (status, first) =
+          await _readStreamStatus(url, timeout: const Duration(seconds: 6));
       expect(status, 200, reason: '过期地址必须先续期再连接');
       expect(_parse(first), isNotEmpty);
       expect(renewCount, greaterThanOrEqualTo(1));
