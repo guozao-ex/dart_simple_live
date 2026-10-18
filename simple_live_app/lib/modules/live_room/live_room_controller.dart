@@ -428,7 +428,11 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
   /// 把播放地址接到 FLV 续流中继上；平台不支持续流时原样返回原始地址。
   Future<List<String>> _applyRenewRelay(LivePlayUrl playUrl) async {
     final epoch = ++_renewEpoch;
-    await _closeRenewRelay();
+    // 只关掉旧中继，不要调 _closeRenewRelay：它会再抬一次代次，
+    // 让下面的 "epoch != _renewEpoch" 永远成立，刚建好的中继会被立刻关掉。
+    final stale = _renewPlayback;
+    _renewPlayback = null;
+    await stale?.close();
     final playback = await FlvRenewPlayback.create(
       playUrl,
       enabled: AppSettingsController.instance.douyuRenewRelay.value,
