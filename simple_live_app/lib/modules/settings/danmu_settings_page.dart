@@ -199,6 +199,19 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
               ),
               AppStyle.divider,
               Obx(
+                () => SettingsSwitch(
+                  title: "均匀弹幕步进",
+                  subtitle: "高刷新率屏幕上一顿一顿时打开：位移改为等距步进，"
+                      "有效刷新略降但更顺滑",
+                  value: controller.danmuUniformPacing.value,
+                  onChanged: (e) {
+                    controller.setDanmuUniformPacing(e);
+                    updateDanmuOption(controller.toDanmakuOption());
+                  },
+                ),
+              ),
+              AppStyle.divider,
+              Obx(
                 () => SettingsNumber(
                   title: "顶部边距",
                   subtitle: "曲面屏显示不全可设置此选项",

@@ -35,6 +35,9 @@ class LocalStorageService extends GetxService {
   /// 合并相同弹幕
   static const String kDanmuMerge = "DanmuMerge";
 
+  /// 弹幕均匀排帧（高刷屏卡顿修复）
+  static const String kDanmuUniformPacing = "DanmuUniformPacing";
+
   /// 弹幕区域
   static const String kDanmuArea = "DanmuArea";
 
