@@ -341,7 +341,14 @@ class LiveRoomController extends PlayerController with WidgetsBindingObserver {
       }
       addSysMsg("开始连接弹幕服务器");
       initDanmau();
-      liveDanmaku.start(detail.value?.danmakuData);
+      // start 会在建立连接前抛错（例如平台签名依赖的原生库缺失），
+      // 不 await 就成了静默失败：弹幕一条没有，界面上什么都看不到。
+      try {
+        await liveDanmaku.start(detail.value?.danmakuData);
+      } catch (e) {
+        Log.logPrint(e);
+        addSysMsg("弹幕连接失败：$e");
+      }
       startLiveDurationTimer(); // 启动开播时长定时器
     } catch (e) {
       Log.logPrint(e);
