@@ -37,6 +37,9 @@ Future<DanmakuController<String>> pumpScreen(
 
   await tester.pumpWidget(
     MaterialApp(
+      // 3.50 起 Material 3 默认用 InkSparkle，测试环境里
+      // shaders/ink_sparkle.frag 无法通过引擎校验；这里关掉水波不影响被测行为。
+      theme: ThemeData(splashFactory: NoSplash.splashFactory),
       home: SizedBox(
         width: 400,
         height: 300,
