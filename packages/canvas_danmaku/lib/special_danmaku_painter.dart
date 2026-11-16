@@ -16,7 +16,7 @@ final class SpecialDanmakuPainter extends BaseDanmakuPainter {
     required super.strokeWidth,
     required super.devicePixelRatio,
     required super.running,
-    required super.tick,
+    required super.tickListenable,
     super.batchThreshold,
   });
 
@@ -34,21 +34,29 @@ final class SpecialDanmakuPainter extends BaseDanmakuPainter {
   }
 
   @pragma("vm:prefer-inline")
-  void _paintSpecialDanmaku(Canvas canvas, DanmakuItem dm,
-      SpecialDanmakuContentItem item, Size size, int elapsed) {
+  void _paintSpecialDanmaku(
+    Canvas canvas,
+    DanmakuItem dm,
+    SpecialDanmakuContentItem item,
+    Size size,
+    int elapsed,
+  ) {
     // 透明度动画
     final color = item.alphaTween == null
         ? item.color
         : item.color.withValues(
-            alpha: item.alphaTween!.transform(
-            elapsed / item.duration,
-          ));
+            alpha: item.alphaTween!.transform(elapsed / item.duration),
+          );
 
     // 位移动画
     double dx, dy;
     if (elapsed > item.translationStartDelay) {
-      late final translateProgress = item.easingType.transform(min(1.0,
-          (elapsed - item.translationStartDelay) / item.translationDuration));
+      late final translateProgress = item.easingType.transform(
+        min(
+          1.0,
+          (elapsed - item.translationStartDelay) / item.translationDuration,
+        ),
+      );
 
       double getOffset(Tween<double> tween) => tween is ConstantTween
           ? tween.begin!
@@ -87,8 +95,12 @@ final class SpecialDanmakuPainter extends BaseDanmakuPainter {
     if (devicePixelRatio == 1.0) {
       canvas.drawImage(image, Offset(dx, dy), paint);
     } else {
-      final src =
-          Rect.fromLTWH(0, 0, image.width.toDouble(), image.height.toDouble());
+      final src = Rect.fromLTWH(
+        0,
+        0,
+        image.width.toDouble(),
+        image.height.toDouble(),
+      );
       final dst = Rect.fromLTWH(
         dx,
         dy,

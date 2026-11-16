@@ -47,6 +47,12 @@ class DanmakuOption {
   /// 弹幕行高
   final double lineHeight;
 
+  /// 是否把同文本弹幕在 8 秒窗口内合并为 `×N`
+  final bool mergeDuplicates;
+
+  /// 单帧最多生成的滚动弹幕数
+  final int maxSpawnPerFrame;
+
   const DanmakuOption({
     this.fontSize = 16,
     this.fontWeight = 4,
@@ -63,6 +69,8 @@ class DanmakuOption {
     this.massiveMode = false,
     this.safeArea = true,
     this.lineHeight = 1.6,
+    this.mergeDuplicates = true,
+    this.maxSpawnPerFrame = 8,
   })  : durationInMilliseconds = duration * 1000,
         staticDurationInMilliseconds = staticDuration * 1000;
 
@@ -82,6 +90,8 @@ class DanmakuOption {
     bool? massiveMode,
     bool? safeArea,
     double? lineHeight,
+    bool? mergeDuplicates,
+    int? maxSpawnPerFrame,
   }) {
     return DanmakuOption(
       area: area ?? this.area,
@@ -99,6 +109,8 @@ class DanmakuOption {
       massiveMode: massiveMode ?? this.massiveMode,
       safeArea: safeArea ?? this.safeArea,
       lineHeight: lineHeight ?? this.lineHeight,
+      mergeDuplicates: mergeDuplicates ?? this.mergeDuplicates,
+      maxSpawnPerFrame: maxSpawnPerFrame ?? this.maxSpawnPerFrame,
     );
   }
 }

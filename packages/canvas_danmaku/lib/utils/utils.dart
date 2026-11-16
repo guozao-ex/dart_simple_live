@@ -4,6 +4,19 @@ import 'dart:ui' as ui;
 import 'package:canvas_danmaku/models/danmaku_content_item.dart';
 import 'package:flutter/material.dart';
 
+/// 栅格化后的弹幕位图与逻辑尺寸。
+class DanmakuBitmap {
+  const DanmakuBitmap({
+    required this.image,
+    required this.width,
+    required this.height,
+  });
+
+  final ui.Image image;
+  final double width;
+  final double height;
+}
+
 abstract final class DmUtils {
   static final Random random = Random();
 
@@ -57,41 +70,81 @@ abstract final class DmUtils {
     required double fontSize,
     required int fontWeight,
     String? fontFamily,
+    int mergeCount = 0,
   }) {
     final fontVariations = fontVariationsOf(fontWeight);
-    final builder = ui.ParagraphBuilder(ui.ParagraphStyle(
-      textAlign: TextAlign.left,
-      fontWeight: fontWeightOf(fontWeight),
-      textDirection: TextDirection.ltr,
-      maxLines: 1,
-      fontFamily: fontFamily,
-    ));
+    final builder = ui.ParagraphBuilder(
+      ui.ParagraphStyle(
+        textAlign: TextAlign.left,
+        fontWeight: fontWeightOf(fontWeight),
+        textDirection: TextDirection.ltr,
+        maxLines: 1,
+        fontFamily: fontFamily,
+      ),
+    );
 
     if (content.count case final count?) {
       builder
-        ..pushStyle(ui.TextStyle(
-          color: content.color,
-          fontSize: fontSize * 0.6,
-          fontFamily: fontFamily,
-          fontVariations: fontVariations,
-        ))
+        ..pushStyle(
+          ui.TextStyle(
+            color: content.color,
+            fontSize: fontSize * 0.6,
+            fontFamily: fontFamily,
+            fontVariations: fontVariations,
+          ),
+        )
         ..addText('($count)')
         ..pop();
     }
 
     builder
-      ..pushStyle(ui.TextStyle(
+      ..pushStyle(
+        ui.TextStyle(
           color: content.color,
           fontSize: fontSize,
           fontFamily: fontFamily,
-          fontVariations: fontVariations))
+          fontVariations: fontVariations,
+        ),
+      )
       ..addText(content.text);
+
+    if (mergeCount > 1) {
+      builder
+        ..pushStyle(
+          ui.TextStyle(
+            color: content.color,
+            fontSize: fontSize * 0.8,
+            fontFamily: fontFamily,
+            fontVariations: fontVariations,
+          ),
+        )
+        ..addText(' ×$mergeCount')
+        ..pop();
+    }
 
     return builder.build()
       ..layout(const ui.ParagraphConstraints(width: double.infinity));
   }
 
-  static ui.Image recordDanmakuImage({
+  /// 位图缓存键：文本与全部影响字形/描边/尺寸的样式。
+  static String imageKey({
+    required DanmakuContentItem content,
+    required double fontSize,
+    required int fontWeight,
+    required int mergeCount,
+    required double strokeWidth,
+    required double devicePixelRatio,
+    String? fontFamily,
+  }) {
+    return '${content.text}\u0000${content.color.toARGB32()}\u0000'
+        '${fontSize.toStringAsFixed(3)}\u0000$fontWeight\u0000'
+        '${fontFamily ?? ''}\u0000${strokeWidth.toStringAsFixed(3)}\u0000'
+        '${devicePixelRatio.toStringAsFixed(3)}\u0000'
+        '${content.selfSend}\u0000${content.count ?? ''}\u0000'
+        '$mergeCount\u0000${content.isColorful}';
+  }
+
+  static DanmakuBitmap buildDanmakuImage({
     required ui.Paragraph contentParagraph,
     required DanmakuContentItem content,
     required double fontSize,
@@ -99,6 +152,7 @@ abstract final class DmUtils {
     required double strokeWidth,
     required double devicePixelRatio,
     String? fontFamily,
+    int mergeCount = 0,
   }) {
     double w = contentParagraph.maxIntrinsicWidth + strokeWidth;
     double h = contentParagraph.height + strokeWidth;
@@ -113,18 +167,20 @@ abstract final class DmUtils {
 
     if (strokeWidth != 0) {
       final fontVariations = fontVariationsOf(fontWeight);
-      final builder = ui.ParagraphBuilder(ui.ParagraphStyle(
-        textAlign: TextAlign.left,
-        fontWeight: fontWeightOf(fontWeight),
-        textDirection: TextDirection.ltr,
-        maxLines: 1,
-        fontFamily: fontFamily,
-      ));
+      final builder = ui.ParagraphBuilder(
+        ui.ParagraphStyle(
+          textAlign: TextAlign.left,
+          fontWeight: fontWeightOf(fontWeight),
+          textDirection: TextDirection.ltr,
+          maxLines: 1,
+          fontFamily: fontFamily,
+        ),
+      );
       final Paint strokePaint = Paint()
         ..shader = content.isColorful
             ? const LinearGradient(
-                    colors: [Color(0xFFF2509E), Color(0xFF308BCD)])
-                .createShader(Rect.fromLTWH(0, 0, w, h))
+                colors: [Color(0xFFF2509E), Color(0xFF308BCD)],
+              ).createShader(Rect.fromLTWH(0, 0, w, h))
             : null
         ..style = PaintingStyle.stroke
         ..strokeWidth = strokeWidth;
@@ -135,23 +191,42 @@ abstract final class DmUtils {
 
       if (content.count case final count?) {
         builder
-          ..pushStyle(ui.TextStyle(
-            fontSize: fontSize * 0.6,
-            foreground: strokePaint,
-            fontFamily: fontFamily,
-            fontVariations: fontVariations,
-          ))
+          ..pushStyle(
+            ui.TextStyle(
+              fontSize: fontSize * 0.6,
+              foreground: strokePaint,
+              fontFamily: fontFamily,
+              fontVariations: fontVariations,
+            ),
+          )
           ..addText('($count)')
           ..pop();
       }
 
       builder
-        ..pushStyle(ui.TextStyle(
+        ..pushStyle(
+          ui.TextStyle(
             fontSize: fontSize,
             foreground: strokePaint,
             fontFamily: fontFamily,
-            fontVariations: fontVariations))
+            fontVariations: fontVariations,
+          ),
+        )
         ..addText(content.text);
+
+      if (mergeCount > 1) {
+        builder
+          ..pushStyle(
+            ui.TextStyle(
+              fontSize: fontSize * 0.8,
+              foreground: strokePaint,
+              fontFamily: fontFamily,
+              fontVariations: fontVariations,
+            ),
+          )
+          ..addText(' ×$mergeCount')
+          ..pop();
+      }
 
       final strokeParagraph = builder.build()
         ..layout(const ui.ParagraphConstraints(width: double.infinity));
@@ -173,7 +248,7 @@ abstract final class DmUtils {
       (h * devicePixelRatio).ceil(),
     );
     pic.dispose();
-    return img;
+    return DanmakuBitmap(image: img, width: w, height: h);
   }
 
   static ui.Image recordSpecialDanmakuImg({
@@ -184,22 +259,26 @@ abstract final class DmUtils {
     String? fontFamily,
   }) {
     final fontVariations = fontVariationsOf(fontWeight);
-    final builder = ui.ParagraphBuilder(ui.ParagraphStyle(
-      textAlign: TextAlign.left,
-      fontWeight: fontWeightOf(fontWeight),
-      textDirection: TextDirection.ltr,
-      fontSize: content.fontSize,
-      fontFamily: fontFamily,
-    ))
-      ..pushStyle(ui.TextStyle(
-        color: content.color,
+    final builder = ui.ParagraphBuilder(
+      ui.ParagraphStyle(
+        textAlign: TextAlign.left,
+        fontWeight: fontWeightOf(fontWeight),
+        textDirection: TextDirection.ltr,
         fontSize: content.fontSize,
         fontFamily: fontFamily,
-        fontVariations: fontVariations,
-        shadows: content.hasStroke
-            ? [Shadow(color: Colors.black, blurRadius: strokeWidth)]
-            : null,
-      ))
+      ),
+    )
+      ..pushStyle(
+        ui.TextStyle(
+          color: content.color,
+          fontSize: content.fontSize,
+          fontFamily: fontFamily,
+          fontVariations: fontVariations,
+          shadows: content.hasStroke
+              ? [Shadow(color: Colors.black, blurRadius: strokeWidth)]
+              : null,
+        ),
+      )
       ..addText(content.text);
 
     final paragraph = builder.build()

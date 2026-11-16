@@ -16,14 +16,10 @@ class DanmuSettingsPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("弹幕设置"),
-      ),
+      appBar: AppBar(title: const Text("弹幕设置")),
       body: ListView(
         padding: AppStyle.edgeInsetsA12,
-        children: const [
-          DanmuSettingsView(),
-        ],
+        children: const [DanmuSettingsView()],
       ),
     );
   }
@@ -46,10 +42,7 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
       children: [
         Padding(
           padding: AppStyle.edgeInsetsA12.copyWith(top: 0),
-          child: Text(
-            "弹幕屏蔽",
-            style: Get.textTheme.titleSmall,
-          ),
+          child: Text("弹幕屏蔽", style: Get.textTheme.titleSmall),
         ),
         SettingsCard(
           child: Column(
@@ -57,7 +50,8 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
             children: [
               SettingsAction(
                 title: "关键词屏蔽",
-                onTap: onTapDanmuShield ??
+                onTap:
+                    onTapDanmuShield ??
                     () => Get.toNamed(RoutePath.kSettingsDanmuShield),
               ),
             ],
@@ -65,10 +59,7 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
         ),
         Padding(
           padding: AppStyle.edgeInsetsA12.copyWith(top: 24),
-          child: Text(
-            "弹幕设置",
-            style: Get.textTheme.titleSmall,
-          ),
+          child: Text("弹幕设置", style: Get.textTheme.titleSmall),
         ),
         SettingsCard(
           child: Column(
@@ -159,9 +150,8 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
                     "偏粗",
                     "粗",
                     "很粗",
-                    "极粗"
-                  ][controller.danmuFontWeightIndex]
-                      .toString(),
+                    "极粗",
+                  ][controller.danmuFontWeightIndex].toString(),
                   onChanged: (e) {
                     controller.setDanmuFontWeight(e);
                     updateDanmuOption(controller.toDanmakuOption());
@@ -195,6 +185,18 @@ class DanmuSettingsView extends GetView<AppSettingsController> {
               //     },
               //   ),
               // ),
+              AppStyle.divider,
+              Obx(
+                () => SettingsSwitch(
+                  title: "合并相同弹幕",
+                  subtitle: "同一条内容在 8 秒内合并显示为 ×N",
+                  value: controller.danmuMerge.value,
+                  onChanged: (e) {
+                    controller.setDanmuMerge(e);
+                    updateDanmuOption(controller.toDanmakuOption());
+                  },
+                ),
+              ),
               AppStyle.divider,
               Obx(
                 () => SettingsNumber(

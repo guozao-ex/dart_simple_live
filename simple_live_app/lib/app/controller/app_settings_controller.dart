@@ -30,8 +30,7 @@ class AppSettingsController extends GetxController {
   }
 
   /// 当前弹幕字重索引
-  int get danmuFontWeightIndex =>
-      danmuFontWeightToIndex(danmuFontWeight.value);
+  int get danmuFontWeightIndex => danmuFontWeightToIndex(danmuFontWeight.value);
 
   /// 缩放模式
   var scaleMode = 0.obs;
@@ -42,28 +41,54 @@ class AppSettingsController extends GetxController {
 
   @override
   void onInit() {
-    themeMode.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kThemeMode, 0);
-    firstRun = LocalStorageService.instance
-        .getValue(LocalStorageService.kFirstRun, true);
-    danmuSize.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kDanmuSize, 16.0);
-    danmuOpacity.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kDanmuOpacity, 1.0);
-    danmuArea.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kDanmuArea, 0.8);
-    danmuSpeed.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kDanmuSpeed, 10.0);
-    danmuEnable.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kDanmuEnable, true);
-    danmuStrokeWidth.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kDanmuStrokeWidth, 2.0);
-    danmuTopMargin.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kDanmuTopMargin, 0.0);
-    danmuBottomMargin.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kDanmuBottomMargin, 0.0);
-    danmuFontWeight.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kDanmuFontWeight, 4);
+    themeMode.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kThemeMode,
+      0,
+    );
+    firstRun = LocalStorageService.instance.getValue(
+      LocalStorageService.kFirstRun,
+      true,
+    );
+    danmuSize.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDanmuSize,
+      16.0,
+    );
+    danmuOpacity.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDanmuOpacity,
+      1.0,
+    );
+    danmuArea.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDanmuArea,
+      0.8,
+    );
+    danmuSpeed.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDanmuSpeed,
+      10.0,
+    );
+    danmuMerge.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDanmuMerge,
+      true,
+    );
+    danmuEnable.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDanmuEnable,
+      true,
+    );
+    danmuStrokeWidth.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDanmuStrokeWidth,
+      2.0,
+    );
+    danmuTopMargin.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDanmuTopMargin,
+      0.0,
+    );
+    danmuBottomMargin.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDanmuBottomMargin,
+      0.0,
+    );
+    danmuFontWeight.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDanmuFontWeight,
+      4,
+    );
     danmuFontFamily.value = LocalStorageService.instance.getValue(
       LocalStorageService.kDanmuFontFamily,
       kDanmuBuiltinFontFamily,
@@ -74,48 +99,74 @@ class AppSettingsController extends GetxController {
       danmuFontFamily.value = kDanmuBuiltinFontFamily;
     }
 
-    hardwareDecode.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kHardwareDecode, true);
-    chatTextSize.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kChatTextSize, 14.0);
+    hardwareDecode.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kHardwareDecode,
+      true,
+    );
+    chatTextSize.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kChatTextSize,
+      14.0,
+    );
 
-    chatTextGap.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kChatTextGap, 4.0);
+    chatTextGap.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kChatTextGap,
+      4.0,
+    );
 
     chatBubbleStyle.value = LocalStorageService.instance.getValue(
       LocalStorageService.kChatBubbleStyle,
       false,
     );
 
-    qualityLevel.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kQualityLevel, 1);
-    qualityLevelCellular.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kQualityLevelCellular, 1);
+    qualityLevel.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kQualityLevel,
+      1,
+    );
+    qualityLevelCellular.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kQualityLevelCellular,
+      1,
+    );
 
-    autoExitEnable.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kAutoExitEnable, false);
+    autoExitEnable.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kAutoExitEnable,
+      false,
+    );
 
-    autoExitDuration.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kAutoExitDuration, 60);
+    autoExitDuration.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kAutoExitDuration,
+      60,
+    );
 
-    roomAutoExitDuration.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kRoomAutoExitDuration, 60);
+    roomAutoExitDuration.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kRoomAutoExitDuration,
+      60,
+    );
 
-    playerCompatMode.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kPlayerCompatMode, false);
+    playerCompatMode.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kPlayerCompatMode,
+      false,
+    );
 
-    playerAutoPause.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kPlayerAutoPause, false);
+    playerAutoPause.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kPlayerAutoPause,
+      false,
+    );
 
-    playerForceHttps.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kPlayerForceHttps, false);
+    playerForceHttps.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kPlayerForceHttps,
+      false,
+    );
 
     // 斗鱼自动续流默认开启：它是修 5 分钟断流的正解，关掉等于回到旧行为
-    douyuRenewRelay.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kDouyuRenewRelay, true);
+    douyuRenewRelay.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kDouyuRenewRelay,
+      true,
+    );
 
-    autoFullScreen.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kAutoFullScreen, false);
+    autoFullScreen.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kAutoFullScreen,
+      false,
+    );
 
     // ignore: invalid_use_of_protected_member
     shieldList.value = LocalStorageService.instance.shieldBox.values.toSet();
@@ -129,29 +180,43 @@ class AppSettingsController extends GetxController {
       LocalStorageService.kPlayerVolume,
       100.0,
     );
-    pipHideDanmu.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kPIPHideDanmu, true);
+    pipHideDanmu.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kPIPHideDanmu,
+      true,
+    );
 
-    styleColor.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kStyleColor, 0xff3498db);
+    styleColor.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kStyleColor,
+      0xff3498db,
+    );
 
-    isDynamic.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kIsDynamic, false);
+    isDynamic.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kIsDynamic,
+      false,
+    );
 
-    bilibiliLoginTip.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kBilibiliLoginTip, true);
+    bilibiliLoginTip.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kBilibiliLoginTip,
+      true,
+    );
 
-    playerBufferSize.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kPlayerBufferSize, 32);
+    playerBufferSize.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kPlayerBufferSize,
+      32,
+    );
 
-    logEnable.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kLogEnable, false);
+    logEnable.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kLogEnable,
+      false,
+    );
     if (logEnable.value) {
       Log.initWriter();
     }
 
-    customPlayerOutput.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kCustomPlayerOutput, false);
+    customPlayerOutput.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kCustomPlayerOutput,
+      false,
+    );
 
     videoOutputDriver.value = LocalStorageService.instance.getValue(
       LocalStorageService.kVideoOutputDriver,
@@ -163,14 +228,14 @@ class AppSettingsController extends GetxController {
       Platform.isAndroid
           ? "audiotrack"
           : Platform.isLinux
-              ? "pulse"
-              : Platform.isWindows
-                  ? "wasapi"
-                  : Platform.isIOS
-                      ? "audiounit"
-                      : Platform.isMacOS
-                          ? "coreaudio"
-                          : "sdl",
+          ? "pulse"
+          : Platform.isWindows
+          ? "wasapi"
+          : Platform.isIOS
+          ? "audiounit"
+          : Platform.isMacOS
+          ? "coreaudio"
+          : "sdl",
     );
 
     videoHardwareDecoder.value = LocalStorageService.instance.getValue(
@@ -178,14 +243,20 @@ class AppSettingsController extends GetxController {
       Platform.isAndroid ? "auto-safe" : "auto",
     );
 
-    autoUpdateFollowEnable.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kAutoUpdateFollowEnable, true);
+    autoUpdateFollowEnable.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kAutoUpdateFollowEnable,
+      true,
+    );
 
-    autoUpdateFollowDuration.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kUpdateFollowDuration, 10);
+    autoUpdateFollowDuration.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kUpdateFollowDuration,
+      10,
+    );
 
-    updateFollowThreadCount.value = LocalStorageService.instance
-        .getValue(LocalStorageService.kUpdateFollowThreadCount, 0);  // 默认 0 = 自动
+    updateFollowThreadCount.value = LocalStorageService.instance.getValue(
+      LocalStorageService.kUpdateFollowThreadCount,
+      0,
+    ); // 默认 0 = 自动
 
     initSiteSort();
     initHomeSort();
@@ -195,10 +266,7 @@ class AppSettingsController extends GetxController {
 
   void initSiteSort() {
     var sort = LocalStorageService.instance
-        .getValue(
-          LocalStorageService.kSiteSort,
-          Sites.allSites.keys.join(","),
-        )
+        .getValue(LocalStorageService.kSiteSort, Sites.allSites.keys.join(","))
         .split(",");
     //如果数量与allSites的数量不一致，将缺失的添加上
     if (sort.length != Sites.allSites.length) {
@@ -248,18 +316,9 @@ class AppSettingsController extends GetxController {
         child: const SimpleDialog(
           title: Text("设置主题"),
           children: [
-            RadioListTile<int>(
-              title: Text("跟随系统"),
-              value: 0,
-            ),
-            RadioListTile<int>(
-              title: Text("浅色模式"),
-              value: 1,
-            ),
-            RadioListTile<int>(
-              title: Text("深色模式"),
-              value: 2,
-            ),
+            RadioListTile<int>(title: Text("跟随系统"), value: 0),
+            RadioListTile<int>(title: Text("浅色模式"), value: 1),
+            RadioListTile<int>(title: Text("深色模式"), value: 2),
           ],
         ),
       ),
@@ -277,8 +336,10 @@ class AppSettingsController extends GetxController {
   var hardwareDecode = true.obs;
   void setHardwareDecode(bool e) {
     hardwareDecode.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kHardwareDecode, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kHardwareDecode,
+      e,
+    );
   }
 
   var chatTextSize = 14.0.obs;
@@ -296,8 +357,10 @@ class AppSettingsController extends GetxController {
   var chatBubbleStyle = false.obs;
   void setChatBubbleStyle(bool e) {
     chatBubbleStyle.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kChatBubbleStyle, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kChatBubbleStyle,
+      e,
+    );
   }
 
   var danmuSize = 16.0.obs;
@@ -310,6 +373,12 @@ class AppSettingsController extends GetxController {
   void setDanmuSpeed(double e) {
     danmuSpeed.value = e;
     LocalStorageService.instance.setValue(LocalStorageService.kDanmuSpeed, e);
+  }
+
+  var danmuMerge = true.obs;
+  void setDanmuMerge(bool e) {
+    danmuMerge.value = e;
+    LocalStorageService.instance.setValue(LocalStorageService.kDanmuMerge, e);
   }
 
   var danmuArea = 0.8.obs;
@@ -333,105 +402,131 @@ class AppSettingsController extends GetxController {
   var danmuStrokeWidth = 2.0.obs;
   void setDanmuStrokeWidth(double e) {
     danmuStrokeWidth.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kDanmuStrokeWidth, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kDanmuStrokeWidth,
+      e,
+    );
   }
 
   var danmuFontWeight = 4.obs;
   void setDanmuFontWeight(int e) {
     danmuFontWeight.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kDanmuFontWeight, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kDanmuFontWeight,
+      e,
+    );
   }
 
   /// 弹幕字体，[kDanmuSystemFontFamily] 表示系统默认
   var danmuFontFamily = kDanmuBuiltinFontFamily.obs;
   void setDanmuFontFamily(String e) {
     danmuFontFamily.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kDanmuFontFamily, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kDanmuFontFamily,
+      e,
+    );
   }
 
   /// 构建当前弹幕渲染配置（弹幕设置页与播放器共用，保证各设置项一致生效）
   DanmakuOption toDanmakuOption() => DanmakuOption(
-        fontSize: danmuSize.value,
-        area: danmuArea.value,
-        duration: danmuSpeed.value,
-        opacity: danmuOpacity.value,
-        strokeWidth: danmuStrokeWidth.value,
-        fontWeight: danmuFontWeightIndex,
-        fontFamily:
-            danmuFontFamily.value.isEmpty ? null : danmuFontFamily.value,
-      );
+    fontSize: danmuSize.value,
+    area: danmuArea.value,
+    duration: danmuSpeed.value,
+    opacity: danmuOpacity.value,
+    strokeWidth: danmuStrokeWidth.value,
+    fontWeight: danmuFontWeightIndex,
+    fontFamily: danmuFontFamily.value.isEmpty ? null : danmuFontFamily.value,
+    mergeDuplicates: danmuMerge.value,
+  );
 
   var qualityLevel = 1.obs;
   void setQualityLevel(int level) {
     qualityLevel.value = level;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kQualityLevel, level);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kQualityLevel,
+      level,
+    );
   }
 
   var qualityLevelCellular = 1.obs;
   void setQualityLevelCellular(int level) {
     qualityLevelCellular.value = level;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kQualityLevelCellular, level);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kQualityLevelCellular,
+      level,
+    );
   }
 
   var autoExitEnable = false.obs;
   void setAutoExitEnable(bool e) {
     autoExitEnable.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kAutoExitEnable, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kAutoExitEnable,
+      e,
+    );
   }
 
   var autoExitDuration = 60.obs;
   void setAutoExitDuration(int e) {
     autoExitDuration.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kAutoExitDuration, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kAutoExitDuration,
+      e,
+    );
   }
 
   var roomAutoExitDuration = 60.obs;
   void setRoomAutoExitDuration(int e) {
     roomAutoExitDuration.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kRoomAutoExitDuration, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kRoomAutoExitDuration,
+      e,
+    );
   }
 
   var playerCompatMode = false.obs;
   void setPlayerCompatMode(bool e) {
     playerCompatMode.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kPlayerCompatMode, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kPlayerCompatMode,
+      e,
+    );
   }
 
   var playerBufferSize = 32.obs;
   void setPlayerBufferSize(int e) {
     playerBufferSize.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kPlayerBufferSize, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kPlayerBufferSize,
+      e,
+    );
   }
 
   var playerAutoPause = false.obs;
   void setPlayerAutoPause(bool e) {
     playerAutoPause.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kPlayerAutoPause, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kPlayerAutoPause,
+      e,
+    );
   }
 
   var autoFullScreen = false.obs;
   void setAutoFullScreen(bool e) {
     autoFullScreen.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kAutoFullScreen, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kAutoFullScreen,
+      e,
+    );
   }
 
   var playershowSuperChat = true.obs;
   void setPlayerShowSuperChat(bool e) {
     playershowSuperChat.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kPlayerShowSuperChat, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kPlayerShowSuperChat,
+      e,
+    );
   }
 
   RxSet<String> shieldList = <String>{}.obs;
@@ -506,22 +601,28 @@ class AppSettingsController extends GetxController {
   var danmuTopMargin = 0.0.obs;
   void setDanmuTopMargin(double e) {
     danmuTopMargin.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kDanmuTopMargin, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kDanmuTopMargin,
+      e,
+    );
   }
 
   var danmuBottomMargin = 0.0.obs;
   void setDanmuBottomMargin(double e) {
     danmuBottomMargin.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kDanmuBottomMargin, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kDanmuBottomMargin,
+      e,
+    );
   }
 
   var bilibiliLoginTip = true.obs;
   void setBiliBiliLoginTip(bool e) {
     bilibiliLoginTip.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kBilibiliLoginTip, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kBilibiliLoginTip,
+      e,
+    );
   }
 
   var logEnable = false.obs;
@@ -533,57 +634,73 @@ class AppSettingsController extends GetxController {
   var customPlayerOutput = false.obs;
   void setCustomPlayerOutput(bool e) {
     customPlayerOutput.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kCustomPlayerOutput, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kCustomPlayerOutput,
+      e,
+    );
   }
 
   var videoOutputDriver = "".obs;
   void setVideoOutputDriver(String e) {
     videoOutputDriver.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kVideoOutputDriver, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kVideoOutputDriver,
+      e,
+    );
   }
 
   var audioOutputDriver = "".obs;
   void setAudioOutputDriver(String e) {
     audioOutputDriver.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kAudioOutputDriver, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kAudioOutputDriver,
+      e,
+    );
   }
 
   var videoHardwareDecoder = "".obs;
   void setVideoHardwareDecoder(String e) {
     videoHardwareDecoder.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kVideoHardwareDecoder, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kVideoHardwareDecoder,
+      e,
+    );
   }
 
   var autoUpdateFollowEnable = false.obs;
   void setAutoUpdateFollowEnable(bool e) {
     autoUpdateFollowEnable.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kAutoUpdateFollowEnable, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kAutoUpdateFollowEnable,
+      e,
+    );
   }
 
   var autoUpdateFollowDuration = 10.obs;
   void setAutoUpdateFollowDuration(int e) {
     autoUpdateFollowDuration.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kUpdateFollowDuration, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kUpdateFollowDuration,
+      e,
+    );
   }
 
   var updateFollowThreadCount = 4.obs;
   void setUpdateFollowThreadCount(int e) {
     updateFollowThreadCount.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kUpdateFollowThreadCount, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kUpdateFollowThreadCount,
+      e,
+    );
   }
 
   var playerForceHttps = false.obs;
   void setPlayerForceHttps(bool e) {
     playerForceHttps.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kPlayerForceHttps, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kPlayerForceHttps,
+      e,
+    );
   }
 
   /// 斗鱼自动续流（本地中继）：关闭后斗鱼播放走原始地址，
@@ -591,7 +708,9 @@ class AppSettingsController extends GetxController {
   var douyuRenewRelay = true.obs;
   void setDouyuRenewRelay(bool e) {
     douyuRenewRelay.value = e;
-    LocalStorageService.instance
-        .setValue(LocalStorageService.kDouyuRenewRelay, e);
+    LocalStorageService.instance.setValue(
+      LocalStorageService.kDouyuRenewRelay,
+      e,
+    );
   }
 }

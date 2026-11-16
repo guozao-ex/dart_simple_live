@@ -32,6 +32,9 @@ class LocalStorageService extends GetxService {
   /// 弹幕速度
   static const String kDanmuSpeed = "DanmuSpeed";
 
+  /// 合并相同弹幕
+  static const String kDanmuMerge = "DanmuMerge";
+
   /// 弹幕区域
   static const String kDanmuArea = "DanmuArea";
 
@@ -178,12 +181,8 @@ class LocalStorageService extends GetxService {
   late Box<String> shieldBox;
 
   Future init() async {
-    settingsBox = await Hive.openBox(
-      "LocalStorage",
-    );
-    shieldBox = await Hive.openBox(
-      "DanmuShield",
-    );
+    settingsBox = await Hive.openBox("LocalStorage");
+    shieldBox = await Hive.openBox("DanmuShield");
   }
 
   T getValue<T>(dynamic key, T defaultValue) {

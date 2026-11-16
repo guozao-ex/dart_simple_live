@@ -1,6 +1,7 @@
 import 'package:canvas_danmaku/base_danmaku_painter.dart';
 import 'package:canvas_danmaku/models/danmaku_content_item.dart';
 import 'package:canvas_danmaku/models/danmaku_item.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 final class StaticDanmakuPainter extends CustomPainter {
@@ -11,7 +12,9 @@ final class StaticDanmakuPainter extends CustomPainter {
   final int fontWeight;
   final double strokeWidth;
   final double devicePixelRatio;
-  final int tick;
+  final ValueListenable<int> tickListenable;
+
+  int get tick => tickListenable.value;
 
   StaticDanmakuPainter({
     required this.length,
@@ -21,8 +24,8 @@ final class StaticDanmakuPainter extends CustomPainter {
     required this.fontWeight,
     required this.strokeWidth,
     required this.devicePixelRatio,
-    required this.tick,
-  });
+    required this.tickListenable,
+  }) : super(repaint: tickListenable);
 
   @override
   void paint(Canvas canvas, Size size) {

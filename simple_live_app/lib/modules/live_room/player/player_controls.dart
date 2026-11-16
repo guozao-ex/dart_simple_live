@@ -1,6 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_smart_dialog/flutter_smart_dialog.dart';
 import 'package:get/get.dart';
 import 'package:media_kit_video/media_kit_video.dart';
 import 'package:canvas_danmaku/canvas_danmaku.dart';
@@ -19,16 +20,10 @@ import 'package:simple_live_app/widgets/superchat_card.dart';
 import 'dart:async';
 import 'package:simple_live_core/simple_live_core.dart';
 
-Widget playerControls(
-  VideoState videoState,
-  LiveRoomController controller,
-) {
+Widget playerControls(VideoState videoState, LiveRoomController controller) {
   return Obx(() {
     if (controller.fullScreenState.value) {
-      return buildFullControls(
-        videoState,
-        controller,
-      );
+      return buildFullControls(videoState, controller);
     }
     return buildControls(
       videoState.context.orientation == Orientation.portrait,
@@ -38,17 +33,13 @@ Widget playerControls(
   });
 }
 
-Widget buildFullControls(
-  VideoState videoState,
-  LiveRoomController controller,
-) {
+Widget buildFullControls(VideoState videoState, LiveRoomController controller) {
   var padding = MediaQuery.of(videoState.context).padding;
   GlobalKey volumeButtonkey = GlobalKey();
   return DragToMoveArea(
     child: Stack(
       children: [
         Container(),
-        buildDanmuView(videoState, controller),
 
         // 左下角SC显示
         Obx(
@@ -71,9 +62,7 @@ Widget buildFullControls(
             initialData: videoState.widget.controller.player.state.buffering,
             builder: (_, s) => Visibility(
               visible: s.data ?? false,
-              child: const Center(
-                child: CircularProgressIndicator(),
-              ),
+              child: const Center(child: CircularProgressIndicator()),
             ),
           ),
         ),
@@ -113,6 +102,8 @@ Widget buildFullControls(
           ),
         ),
 
+        buildDanmuView(videoState, controller),
+
         // 顶部
         Obx(
           () => AnimatedPositioned(
@@ -134,10 +125,7 @@ Widget buildFullControls(
                 gradient: LinearGradient(
                   begin: Alignment.bottomCenter,
                   end: Alignment.topCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black87,
-                  ],
+                  colors: [Colors.transparent, Colors.black87],
                 ),
               ),
               child: Row(
@@ -229,10 +217,7 @@ Widget buildFullControls(
                 gradient: LinearGradient(
                   begin: Alignment.topCenter,
                   end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.transparent,
-                    Colors.black87,
-                  ],
+                  colors: [Colors.transparent, Colors.black87],
                 ),
               ),
               padding: EdgeInsets.only(
@@ -246,10 +231,7 @@ Widget buildFullControls(
                     onPressed: () {
                       controller.refreshRoom();
                     },
-                    icon: const Icon(
-                      Remix.refresh_line,
-                      color: Colors.white,
-                    ),
+                    icon: const Icon(Remix.refresh_line, color: Colors.white),
                   ),
                   Offstage(
                     offstage: controller.showDanmakuState.value,
@@ -290,8 +272,10 @@ Widget buildFullControls(
                       padding: const EdgeInsets.only(left: 8.0),
                       child: Text(
                         controller.liveDuration.value,
-                        style:
-                            const TextStyle(fontSize: 14, color: Colors.white),
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: Colors.white,
+                        ),
                       ),
                     ),
                   ),
@@ -301,8 +285,9 @@ Widget buildFullControls(
                     child: IconButton(
                       key: volumeButtonkey,
                       onPressed: () {
-                        controller
-                            .showVolumeSlider(volumeButtonkey.currentContext!);
+                        controller.showVolumeSlider(
+                          volumeButtonkey.currentContext!,
+                        );
                       },
                       icon: const Icon(
                         Icons.volume_down,
@@ -318,8 +303,10 @@ Widget buildFullControls(
                     child: Obx(
                       () => Text(
                         controller.currentQualityInfo.value,
-                        style:
-                            const TextStyle(color: Colors.white, fontSize: 15),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
                   ),
@@ -434,7 +421,6 @@ Widget buildControls(
   return Stack(
     children: [
       Container(),
-      buildDanmuView(videoState, controller),
 
       // 左下角SC显示
       Obx(
@@ -457,9 +443,7 @@ Widget buildControls(
           initialData: videoState.widget.controller.player.state.buffering,
           builder: (_, s) => Visibility(
             visible: s.data ?? false,
-            child: const Center(
-              child: CircularProgressIndicator(),
-            ),
+            child: const Center(child: CircularProgressIndicator()),
           ),
         ),
       ),
@@ -481,6 +465,7 @@ Widget buildControls(
           ),
         ),
       ),
+      buildDanmuView(videoState, controller),
       Obx(
         () => AnimatedPositioned(
           left: 0,
@@ -492,10 +477,7 @@ Widget buildControls(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.transparent,
-                  Colors.black87,
-                ],
+                colors: [Colors.transparent, Colors.black87],
               ),
             ),
             child: Row(
@@ -504,10 +486,7 @@ Widget buildControls(
                   onPressed: () {
                     controller.refreshRoom();
                   },
-                  icon: const Icon(
-                    Remix.refresh_line,
-                    color: Colors.white,
-                  ),
+                  icon: const Icon(Remix.refresh_line, color: Colors.white),
                 ),
                 Offstage(
                   offstage: controller.showDanmakuState.value,
@@ -578,8 +557,10 @@ Widget buildControls(
                     child: Obx(
                       () => Text(
                         controller.currentQualityInfo.value,
-                        style:
-                            const TextStyle(color: Colors.white, fontSize: 15),
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                        ),
                       ),
                     ),
                   ),
@@ -613,10 +594,7 @@ Widget buildControls(
                   onPressed: () {
                     controller.enterFullScreen();
                   },
-                  icon: const Icon(
-                    Remix.fullscreen_line,
-                    color: Colors.white,
-                  ),
+                  icon: const Icon(Remix.fullscreen_line, color: Colors.white),
                 ),
               ],
             ),
@@ -652,6 +630,11 @@ Widget buildDanmuView(VideoState videoState, LiveRoomController controller) {
     createdController: controller.initDanmakuController,
     // 弹幕配置统一由 AppSettingsController.toDanmakuOption() 构建
     option: AppSettingsController.instance.toDanmakuOption(),
+    onBlockDanmaku: (text) {
+      AppSettingsController.instance.addShieldList(text);
+      SmartDialog.showToast("已屏蔽此弹幕");
+    },
+    onNotice: (message) => SmartDialog.showToast(message),
   );
   return Positioned.fill(
     top: padding.top,
@@ -693,22 +676,19 @@ void showLinesInfo(LiveRoomController controller) {
               text: "线路${i + 1}",
               children: [
                 WidgetSpan(
-                    child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: AppStyle.radius4,
-                    border: Border.all(
-                      color: Colors.grey,
+                  child: Container(
+                    decoration: BoxDecoration(
+                      borderRadius: AppStyle.radius4,
+                      border: Border.all(color: Colors.grey),
+                    ),
+                    padding: AppStyle.edgeInsetsH4,
+                    margin: AppStyle.edgeInsetsL8,
+                    child: Text(
+                      controller.playUrls[i].contains(".flv") ? "FLV" : "HLS",
+                      style: const TextStyle(fontSize: 12),
                     ),
                   ),
-                  padding: AppStyle.edgeInsetsH4,
-                  margin: AppStyle.edgeInsetsL8,
-                  child: Text(
-                    controller.playUrls[i].contains(".flv") ? "FLV" : "HLS",
-                    style: const TextStyle(
-                      fontSize: 12,
-                    ),
-                  ),
-                )),
+                ),
               ],
             ),
             style: const TextStyle(fontSize: 14),
@@ -741,10 +721,7 @@ void showQualitesInfo(LiveRoomController controller) {
         var item = controller.qualites[i];
         return ListTile(
           selected: controller.currentQuality == i,
-          title: Text(
-            item.quality,
-            style: const TextStyle(fontSize: 14),
-          ),
+          title: Text(item.quality, style: const TextStyle(fontSize: 14)),
           minLeadingWidth: 16,
           onTap: () {
             Utils.hideRightDialog();
@@ -769,9 +746,7 @@ void showDanmakuSettings(LiveRoomController controller) {
     child: ListView(
       padding: AppStyle.edgeInsetsA12,
       children: [
-        DanmuSettingsView(
-          danmakuController: controller.danmakuController,
-        ),
+        DanmuSettingsView(danmakuController: controller.danmakuController),
       ],
     ),
   );
@@ -798,10 +773,7 @@ void showPlayerSettings(LiveRoomController controller) {
           children: [
             Padding(
               padding: AppStyle.edgeInsetsH16,
-              child: Text(
-                "画面尺寸",
-                style: Get.textTheme.titleMedium,
-              ),
+              child: Text("画面尺寸", style: Get.textTheme.titleMedium),
             ),
             const RadioListTile(
               value: 0,
@@ -897,12 +869,12 @@ class PlayerSuperChatCard extends StatefulWidget {
   final LiveSuperChatMessage message;
   final VoidCallback onExpire;
   final int duration;
-  const PlayerSuperChatCard(
-      {required this.message,
-      required this.onExpire,
-      required this.duration,
-      Key? key})
-      : super(key: key);
+  const PlayerSuperChatCard({
+    required this.message,
+    required this.onExpire,
+    required this.duration,
+    Key? key,
+  }) : super(key: key);
   @override
   State<PlayerSuperChatCard> createState() => _PlayerSuperChatCardState();
 }
@@ -992,8 +964,9 @@ class _PlayerSuperChatOverlayState extends State<PlayerSuperChatOverlay> {
       }
     }
     // 监听SC列表变化
-    _worker =
-        ever<List<LiveSuperChatMessage>>(widget.controller.superChats, (list) {
+    _worker = ever<List<LiveSuperChatMessage>>(widget.controller.superChats, (
+      list,
+    ) {
       // 新增
       for (var sc in list) {
         if (!_displayed.any((e) => e.sc == sc)) {

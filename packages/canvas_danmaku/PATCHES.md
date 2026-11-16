@@ -21,3 +21,17 @@
 
 从上游更新本包时，请保留以上改动，或改回「多静态字重字体」方案并同步调整
 `simple_live_app` 的字体声明。上游仓库：<https://github.com/Predidit/canvas_danmaku>
+
+## 2026-11-16 横向弹幕引擎重写
+
+在上述字重补丁之外，本目录的滚动弹幕改为 Fy1Sync 式调度：
+
+- 到达只入队；每帧批量生成 `min(空闲车道, maxSpawnPerFrame)` 条，未被分配车道的消息直接丢弃、不排队。
+- 所有滚动弹幕等速（`viewWidth / durationMs`），车道用 `freeAt` 复用；`massiveMode` 保留叠轨。
+- 文本位图 LRU 缓存（默认 24 MiB / 512 条，引用计数），样式或设备像素比变化时清空。
+- `CustomPainter` 通过 `repaint` Listenable 重绘；位置由帧时间纯函数给出，绘制横坐标吸附设备像素。
+- 同文本 8 秒内合并为 `×N`；悬停/点击暂停单条并显示复制、屏蔽此弹幕、关闭菜单。
+
+上游升级时需保留这些差异，或按本文件重新移植。新增文件：
+`danmaku_lane_allocator.dart`、`danmaku_queue.dart`、`danmaku_image_cache.dart`、
+`danmaku_merge_processor.dart`、`danmaku_menu.dart`、`danmaku_engine_stats.dart`。
