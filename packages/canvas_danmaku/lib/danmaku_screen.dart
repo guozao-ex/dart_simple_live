@@ -7,7 +7,6 @@ import 'package:canvas_danmaku/danmaku_image_cache.dart';
 import 'package:canvas_danmaku/danmaku_lane_allocator.dart';
 import 'package:canvas_danmaku/danmaku_menu.dart';
 import 'package:canvas_danmaku/danmaku_merge_processor.dart';
-import 'package:canvas_danmaku/danmaku_pacer.dart';
 import 'package:canvas_danmaku/danmaku_queue.dart';
 import 'package:canvas_danmaku/models/danmaku_content_item.dart';
 import 'package:canvas_danmaku/models/danmaku_item.dart';
@@ -94,8 +93,6 @@ class _DanmakuScreenState<T> extends State<DanmakuScreen<T>>
   late final ValueNotifier<double> _opacityNotifier;
   late int _lastTick = 0;
   int _tick = 0;
-  final DanmakuPacer _pacer = DanmakuPacer();
-  int _lastPacedTick = 0;
 
   /// 运行状态
   bool _running = true;
@@ -197,29 +194,11 @@ class _DanmakuScreenState<T> extends State<DanmakuScreen<T>>
     _reserveHeldLane(now);
     _spawn(now, imageBudget: math.max(1, _option.maxSpawnPerFrame));
     _sweep(now);
-    _frameNotifier.value = _pacedTime(now);
+    _frameNotifier.value = now;
     if (!_hasWork && _ticker.isActive) {
       _lastTick = now;
       _ticker.stop();
     }
-  }
-
-  /// 位置更新使用的时刻：开启「均匀排帧」时量化到实测帧间隔的网格
-  int _pacedTime(int now) {
-    if (!_option.uniformPacing) {
-      _lastPacedTick = now;
-      return now;
-    }
-    final delta = now - _lastPacedTick;
-    _lastPacedTick = now;
-    if (delta > 0) {
-      _pacer.add(delta);
-    }
-    final step = _pacer.step;
-    if (step <= 0) {
-      return now;
-    }
-    return now - now % step;
   }
 
   void _reserveHeldLane(int now) {
@@ -230,6 +209,7 @@ class _DanmakuScreenState<T> extends State<DanmakuScreen<T>>
       _lanes.ensureFreeAt(held.lane, now + remaining + 1);
     }
   }
+
   void _spawn(int now, {required int imageBudget}) {
     if (now >= _nextPendingPruneAt) {
       final active = _merge.activeGroupIds(now);
@@ -675,10 +655,6 @@ class _DanmakuScreenState<T> extends State<DanmakuScreen<T>>
     final clearBottom = option.hideBottom && !old.hideBottom;
     final clearSpecial = option.hideSpecial && !old.hideSpecial;
     final mergeChanged = option.mergeDuplicates != old.mergeDuplicates;
-    if (option.uniformPacing != old.uniformPacing) {
-      _pacer.reset();
-      _lastPacedTick = _tick;
-    }
     final oldSpeed = _lanes.layout.speed;
 
     _optionNotifier.value = option;

@@ -69,10 +69,6 @@ class AppSettingsController extends GetxController {
       LocalStorageService.kDanmuMerge,
       true,
     );
-    danmuUniformPacing.value = LocalStorageService.instance.getValue(
-      LocalStorageService.kDanmuUniformPacing,
-      false,
-    );
     danmuEnable.value = LocalStorageService.instance.getValue(
       LocalStorageService.kDanmuEnable,
       true,
@@ -385,16 +381,6 @@ class AppSettingsController extends GetxController {
     LocalStorageService.instance.setValue(LocalStorageService.kDanmuMerge, e);
   }
 
-  /// 把位置更新量化到实测帧间隔网格，消除高刷屏上“一顿一顿”的观感
-  var danmuUniformPacing = false.obs;
-  void setDanmuUniformPacing(bool e) {
-    danmuUniformPacing.value = e;
-    LocalStorageService.instance.setValue(
-      LocalStorageService.kDanmuUniformPacing,
-      e,
-    );
-  }
-
   var danmuArea = 0.8.obs;
   void setDanmuArea(double e) {
     danmuArea.value = e;
@@ -451,7 +437,6 @@ class AppSettingsController extends GetxController {
     fontWeight: danmuFontWeightIndex,
     fontFamily: danmuFontFamily.value.isEmpty ? null : danmuFontFamily.value,
     mergeDuplicates: danmuMerge.value,
-    uniformPacing: danmuUniformPacing.value,
   );
 
   var qualityLevel = 1.obs;

@@ -50,9 +50,6 @@ class DanmakuOption {
   /// 是否把同文本弹幕在 8 秒窗口内合并为 `×N`
   final bool mergeDuplicates;
 
-  /// 是否把位置更新量化到固定时间网格（修复高刷新率屏幕上的步长抖动）
-  final bool uniformPacing;
-
   /// 单帧最多生成的滚动弹幕数
   final int maxSpawnPerFrame;
 
@@ -73,7 +70,6 @@ class DanmakuOption {
     this.safeArea = true,
     this.lineHeight = 1.6,
     this.mergeDuplicates = true,
-    this.uniformPacing = false,
     this.maxSpawnPerFrame = 8,
   })  : durationInMilliseconds = duration * 1000,
         staticDurationInMilliseconds = staticDuration * 1000;
@@ -95,7 +91,6 @@ class DanmakuOption {
     bool? safeArea,
     double? lineHeight,
     bool? mergeDuplicates,
-    bool? uniformPacing,
     int? maxSpawnPerFrame,
   }) {
     return DanmakuOption(
@@ -115,7 +110,6 @@ class DanmakuOption {
       safeArea: safeArea ?? this.safeArea,
       lineHeight: lineHeight ?? this.lineHeight,
       mergeDuplicates: mergeDuplicates ?? this.mergeDuplicates,
-      uniformPacing: uniformPacing ?? this.uniformPacing,
       maxSpawnPerFrame: maxSpawnPerFrame ?? this.maxSpawnPerFrame,
     );
   }
