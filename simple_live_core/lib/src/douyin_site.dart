@@ -1,8 +1,10 @@
 import 'dart:convert';
 import 'dart:math';
 
+import 'package:meta/meta.dart';
 import 'package:simple_live_core/simple_live_core.dart';
 import 'package:simple_live_core/src/common/convert_helper.dart';
+import 'package:simple_live_core/src/common/core_error.dart';
 import 'package:simple_live_core/src/common/http_client.dart';
 import 'package:simple_live_core/src/scripts/douyin_sign.dart';
 
@@ -263,7 +265,6 @@ class DouyinSite implements LiveSite {
 
     // 读取用户唯一ID，用于弹幕连接
     // 似乎这个参数不是必须的，先随机生成一个
-    //var userUniqueId = await _getUserUniqueId(webRid);
     var userUniqueId = generateRandomNumber(12).toString();
 
     var room = roomData["data"]["room"];
@@ -310,10 +311,9 @@ class DouyinSite implements LiveSite {
   /// - 返回直播间信息
   Future<LiveRoomDetail> getRoomDetailByWebRid(String webRid) async {
     try {
-      var result = await _getRoomDetailByWebRidApi(webRid);
-      return result;
+      return await _getRoomDetailByWebRidApi(webRid);
     } catch (e) {
-      CoreLog.error(e);
+      CoreLog.error("抖音房间接口获取失败，回退网页解析：$e");
     }
     return await _getRoomDetailByWebRidHtml(webRid);
   }
@@ -325,13 +325,16 @@ class DouyinSite implements LiveSite {
     // 读取房间信息
     var data = await _getRoomDataByApi(webRid);
 
-    var roomData = data["data"][0];
-    var userData = data["user"];
+    var roomList = asT<List?>(data["data"]);
+    if (roomList == null || roomList.isEmpty) {
+      throw Exception("抖音房间接口未返回房间数据，可能被风控或签名失效");
+    }
+    var roomData = roomList[0] as Map;
+    var userData = asT<Map>(data["user"]) ?? {};
     var roomId = roomData["id_str"].toString();
 
     // 读取用户唯一ID，用于弹幕连接
     // 似乎这个参数不是必须的，先随机生成一个
-    //var userUniqueId = await _getUserUniqueId(webRid);
     var userUniqueId = generateRandomNumber(12).toString();
 
     var owner = roomData["owner"];
@@ -346,10 +349,10 @@ class DouyinSite implements LiveSite {
       cover: roomStatus ? roomData["cover"]["url_list"][0].toString() : "",
       userName: roomStatus
           ? owner["nickname"].toString()
-          : userData["nickname"].toString(),
+          : _readString(userData, ["nickname"]) ?? "",
       userAvatar: roomStatus
           ? owner["avatar_thumb"]["url_list"][0].toString()
-          : userData["avatar_thumb"]["url_list"][0].toString(),
+          : _readString(userData, ["avatar_thumb", "url_list", 0]) ?? "",
       online: roomStatus
           ? asT<int?>(roomData["room_view_stats"]["display_value"]) ?? 0
           : 0,
@@ -371,56 +374,81 @@ class DouyinSite implements LiveSite {
   /// - [webRid] 直播间RID
   /// - 返回直播间信息
   Future<LiveRoomDetail> _getRoomDetailByWebRidHtml(String webRid) async {
-    var roomData = await _getRoomDataByHtml(webRid);
-    var roomId = roomData["roomStore"]["roomInfo"]["room"]["id_str"].toString();
-    var userUniqueId = roomData["userStore"]["odin"]["user_unique_id"]
-        .toString();
-
-    var room = roomData["roomStore"]["roomInfo"]["room"];
-    var owner = room["owner"];
-    var anchor = roomData["roomStore"]["roomInfo"]["anchor"];
-    var roomStatus = (asT<int?>(room["status"]) ?? 0) == 2;
-
     // 主要是为了获取cookie,用于弹幕websocket连接
     var headers = await getRequestHeaders();
+    var roomData = await _getRoomDataByHtml(webRid);
+    return parseRoomDetailFromWebState(
+      webRid: webRid,
+      roomData: roomData,
+      cookie: headers["cookie"]?.toString() ?? "",
+    );
+  }
+
+  /// 把直播间网页里的 state 解析成直播间信息
+  ///
+  /// 抖音网页是灰度改版的，字段可能整段缺失（例如 `userStore.odin`），
+  /// 所以这里逐层安全取值，缺字段只降级不崩：
+  /// - 缺 `userStore.odin.user_unique_id`：随机生成设备ID，弹幕连接不依赖真实值
+  /// - 缺头像/介绍/在线人数：留空或置 0
+  /// - 缺房间数据：抛 [CoreError]，提示可能命中验证页或页面改版
+  @visibleForTesting
+  LiveRoomDetail parseRoomDetailFromWebState({
+    required String webRid,
+    required dynamic roomData,
+    required String cookie,
+  }) {
+    var room = _readMap(roomData, ["roomStore", "roomInfo", "room"]);
+    if (room == null) {
+      throw CoreError("抖音直播间页面解析失败：未找到房间数据，可能命中验证页或页面改版");
+    }
+    var anchor = _readMap(roomData, ["roomStore", "roomInfo", "anchor"]);
+    var owner = _readMap(room, ["owner"]);
+
+    // roomId 用于弹幕签名，优先房间 id_str，退化到页面上的 roomId
+    var roomId =
+        _readString(room, ["id_str"]) ??
+        _readString(roomData, ["roomStore", "roomInfo", "roomId"]) ??
+        "";
+    if (roomId.isEmpty) {
+      CoreLog.error("抖音直播间页面缺少房间ID，弹幕可能无法连接");
+    }
+
+    // 设备唯一ID，取不到就随机生成
+    var userUniqueId =
+        _readString(roomData, ["userStore", "odin", "user_unique_id"]) ??
+        generateRandomNumber(12).toString();
+
+    var roomStatus = (asT<int?>(room["status"]) ?? 0) == 2;
+    var userName = roomStatus
+        ? _readString(owner, ["nickname"])
+        : _readString(anchor, ["nickname"]);
+    var userAvatar = roomStatus
+        ? _readString(owner, ["avatar_thumb", "url_list", 0])
+        : _readString(anchor, ["avatar_thumb", "url_list", 0]);
 
     return LiveRoomDetail(
       roomId: webRid,
-      title: room["title"].toString(),
-      cover: roomStatus ? room["cover"]["url_list"][0].toString() : "",
-      userName: roomStatus
-          ? owner["nickname"].toString()
-          : anchor["nickname"].toString(),
-      userAvatar: roomStatus
-          ? owner["avatar_thumb"]["url_list"][0].toString()
-          : anchor["avatar_thumb"]["url_list"][0].toString(),
+      title: _readString(room, ["title"]) ?? "",
+      cover: roomStatus
+          ? _readString(room, ["cover", "url_list", 0]) ?? ""
+          : "",
+      userName: userName ?? "",
+      userAvatar: userAvatar ?? "",
       online: roomStatus
-          ? asT<int?>(room["room_view_stats"]["display_value"]) ?? 0
+          ? _readInt(room, ["room_view_stats", "display_value"])
           : 0,
       status: roomStatus,
       url: "https://live.douyin.com/$webRid",
-      introduction: owner?["signature"]?.toString() ?? "",
+      introduction: _readString(owner, ["signature"]) ?? "",
       notice: "",
       danmakuData: DouyinDanmakuArgs(
         webRid: webRid,
         roomId: roomId,
         userId: userUniqueId,
-        cookie: headers["cookie"],
+        cookie: cookie,
       ),
       data: roomStatus ? room["stream_url"] : {},
     );
-  }
-
-  /// 读取用户的唯一ID
-  /// - [webRid] 直播间RID
-  // ignore: unused_element
-  Future<String> _getUserUniqueId(String webRid) async {
-    try {
-      var webInfo = await _getRoomDataByHtml(webRid);
-      return webInfo["userStore"]["odin"]["user_unique_id"].toString();
-    } catch (e) {
-      return generateRandomNumber(12).toString();
-    }
   }
 
   /// 进入直播间前需要先获取cookie
@@ -514,7 +542,7 @@ class DouyinSite implements LiveSite {
       throw Exception("抖音接口返回格式异常");
     }
 
-    return result["data"];
+    return asT<Map>(result["data"]) ?? {};
   }
 
   /// 通过roomId获取直播间信息
@@ -780,5 +808,45 @@ class DouyinSite implements LiveSite {
     }
     return int.tryParse(stringBuffer.toString()) ??
         Random().nextInt(1000000000);
+  }
+
+  /// 按路径安全读取嵌套数据，任意一层缺失都返回 null
+  /// - [node] 起始节点（Map 或 List）
+  /// - [path] 逐层键名，List 用 int 下标
+  static dynamic _readPath(dynamic node, List<Object> path) {
+    var current = node;
+    for (var key in path) {
+      if (current is Map) {
+        current = current[key];
+      } else if (current is List) {
+        if (key is! int || key < 0 || key >= current.length) {
+          return null;
+        }
+        current = current[key];
+      } else {
+        return null;
+      }
+    }
+    return current;
+  }
+
+  static Map? _readMap(dynamic node, List<Object> path) =>
+      asT<Map?>(_readPath(node, path));
+
+  static String? _readString(dynamic node, List<Object> path) {
+    var value = _readPath(node, path);
+    if (value == null) {
+      return null;
+    }
+    var text = value.toString();
+    return text.isEmpty ? null : text;
+  }
+
+  static int _readInt(dynamic node, List<Object> path) {
+    var value = _readPath(node, path);
+    if (value is int) {
+      return value;
+    }
+    return int.tryParse(value?.toString() ?? "") ?? 0;
   }
 }
