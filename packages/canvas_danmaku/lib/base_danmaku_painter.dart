@@ -1,6 +1,7 @@
 import 'dart:ui' as ui;
 
 import 'package:canvas_danmaku/canvas_danmaku.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 abstract base class BaseDanmakuPainter extends CustomPainter {
@@ -12,7 +13,9 @@ abstract base class BaseDanmakuPainter extends CustomPainter {
   final double devicePixelRatio;
   final bool running;
   final int batchThreshold;
-  final int tick;
+  final ValueListenable<int> tickListenable;
+
+  int get tick => tickListenable.value;
 
   static final Paint _paint = Paint()..filterQuality = FilterQuality.low;
 
@@ -24,9 +27,9 @@ abstract base class BaseDanmakuPainter extends CustomPainter {
     required this.strokeWidth,
     required this.devicePixelRatio,
     required this.running,
-    required this.tick,
-    this.batchThreshold = 10, // 默认值为10，可以自行调整
-  });
+    required this.tickListenable,
+    this.batchThreshold = 10,
+  }) : super(repaint: tickListenable);
 
   static void paintImg(
     Canvas canvas,
@@ -36,14 +39,26 @@ abstract base class BaseDanmakuPainter extends CustomPainter {
     double devicePixelRatio,
   ) {
     final img = item.image!;
+    final snappedDx = _snap(dx, devicePixelRatio);
+    final snappedDy = _snap(dy, devicePixelRatio);
     if (devicePixelRatio == 1.0) {
-      canvas.drawImage(img, Offset(dx, dy), _paint);
+      canvas.drawImage(img, Offset(snappedDx, snappedDy), _paint);
     } else {
-      final src =
-          Rect.fromLTWH(0, 0, img.width.toDouble(), img.height.toDouble());
-      final dst = Rect.fromLTWH(dx, dy, item.width, item.height);
+      final src = Rect.fromLTWH(
+        0,
+        0,
+        img.width.toDouble(),
+        img.height.toDouble(),
+      );
+      final dst = Rect.fromLTWH(snappedDx, snappedDy, item.width, item.height);
       canvas.drawImageRect(img, src, dst, _paint);
     }
+  }
+
+  /// 把逻辑坐标吸附到设备像素网格，避免逐帧重采样造成文字抖动。
+  static double _snap(double value, double devicePixelRatio) {
+    if (devicePixelRatio <= 0 || devicePixelRatio == 1.0) return value;
+    return (value * devicePixelRatio).roundToDouble() / devicePixelRatio;
   }
 
   @override

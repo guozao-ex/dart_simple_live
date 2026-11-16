@@ -21,8 +21,14 @@ class DanmakuContentItem<T> {
   /// 是否为会员弹幕
   final bool isColorful;
 
-  /// 弹幕数量
+  /// 弹幕数量（平台聚合计数），渲染为文本前缀。
   final int? count;
+
+  /// 发送者名称，仅用于悬停/点击菜单展示。
+  final String? userName;
+
+  /// 本地合并计数；大于 1 时渲染为 `×N` 后缀。
+  final int mergeCount;
 
   final T? extra;
 
@@ -33,12 +39,14 @@ class DanmakuContentItem<T> {
     this.selfSend = false,
     this.isColorful = false,
     this.count,
+    this.userName,
+    this.mergeCount = 1,
     this.extra,
   });
 
   @override
   String toString() {
-    return '${objectRuntimeType(this, "DanmakuContentItem<?>")}(text="$text", color=0x${color.toARGB32().toRadixString(16)}, type=${type.name}${count != null ? ", count=$count" : ""}${selfSend ? ", selfSend" : ""}${isColorful ? ", colorful" : ""}${extra != null ? ". extra=$extra" : ""})';
+    return '${objectRuntimeType(this, "DanmakuContentItem<?>")}(text="$text", color=0x${color.toARGB32().toRadixString(16)}, type=${type.name}${count != null ? ", count=$count" : ""}${userName != null ? ", user=$userName" : ""}${mergeCount > 1 ? ", mergeCount=$mergeCount" : ""}${selfSend ? ", selfSend" : ""}${isColorful ? ", colorful" : ""}${extra != null ? ". extra=$extra" : ""})';
   }
 }
 
@@ -168,7 +176,7 @@ class SpecialDanmakuContentItem<T> extends DanmakuContentItem<T> {
           int() => digit.toDouble(),
           double() => digit.isFinite ? digit : null,
           String() => double.tryParse(digit),
-          _ => null
+          _ => null,
         };
 
     double? start = convert(rawStart);
@@ -185,14 +193,14 @@ class SpecialDanmakuContentItem<T> extends DanmakuContentItem<T> {
         int() => digit,
         double() => digit.toInt(),
         String() => int.tryParse(digit) ?? 0,
-        _ => throw UnimplementedError()
+        _ => throw UnimplementedError(),
       };
 
   static double _parseDouble(dynamic digit) => switch (digit) {
         int() => digit.toDouble(),
         double() => digit,
         String() => double.tryParse(digit) ?? 0,
-        _ => throw UnimplementedError()
+        _ => throw UnimplementedError(),
       };
 
   static Tween<T> _makeTween<T>(T start, T end) {

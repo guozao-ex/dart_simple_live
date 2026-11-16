@@ -23,11 +23,11 @@ Widget buildControls(VideoState videoState, LiveRoomController controller) {
   return Stack(
     children: [
       Container(),
-      buildDanmuView(videoState, controller),
       // 点击播放器打开设置
       Positioned.fill(
         child: GestureDetector(onTap: () => showPlayerSettings(controller)),
       ),
+      buildDanmuView(videoState, controller),
       Center(
         child: // 中间
             StreamBuilder(

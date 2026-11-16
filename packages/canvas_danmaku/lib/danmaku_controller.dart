@@ -1,3 +1,4 @@
+import 'package:canvas_danmaku/danmaku_engine_stats.dart';
 import 'package:canvas_danmaku/models/danmaku_content_item.dart';
 import 'package:canvas_danmaku/models/danmaku_item.dart';
 import 'package:canvas_danmaku/models/danmaku_option.dart';
@@ -19,6 +20,11 @@ class DanmakuController<T> {
   final List<DanmakuItem<T>> scrollDanmaku;
   final List<DanmakuItem<T>> staticDanmaku;
   final List<DanmakuItem<T>> specialDanmaku;
+
+  /// 运行时统计读取器，仅调试使用。
+  final DanmakuEngineStats Function()? getStats;
+
+  DanmakuEngineStats? get stats => getStats?.call();
 
   DanmakuOption get option => getOption();
 
@@ -43,5 +49,6 @@ class DanmakuController<T> {
     required this.scrollDanmaku,
     required this.staticDanmaku,
     required this.specialDanmaku,
+    this.getStats,
   });
 }
