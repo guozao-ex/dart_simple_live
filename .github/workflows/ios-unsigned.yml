@@ -1,0 +1,45 @@
+name: ios-unsigned
+
+# 仅构建未签名 iOS IPA，供侧载签名使用；不依赖 Android 签名 secrets。
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-ios:
+    runs-on: macos-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.50.0"
+          cache: true
+
+      - name: Restore packages
+        working-directory: simple_live_app
+        run: flutter pub get
+
+      # 未签名构建：产物可用于后续用开发者证书/Sideloadly 重签
+      - name: Build iOS (no codesign)
+        working-directory: simple_live_app
+        run: flutter build ios --release --no-codesign
+
+      - name: Package unsigned IPA
+        working-directory: simple_live_app
+        run: |
+          mkdir -p build/ios/iphoneos/Payload
+          cp -R build/ios/iphoneos/Runner.app build/ios/iphoneos/Payload/Runner.app
+          cd build/ios/iphoneos
+          zip -qry ios_no_sign.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@v4
+        with:
+          name: ios-unsigned-ipa
+          path: simple_live_app/build/ios/iphoneos/ios_no_sign.ipa
+          if-no-files-found: error
