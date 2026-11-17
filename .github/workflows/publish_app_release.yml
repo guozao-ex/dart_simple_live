@@ -239,6 +239,13 @@ jobs:
           cd simple_live_app
           flutter_distributor package --platform windows --targets msix,zip --skip-clean
 
+      # 生成安装包（Inno Setup，脚本读取 exe 资源里的版本号）
+      - name: Install Inno Setup
+        run: choco install innosetup --no-progress -y
+      - name: Build Windows Installer
+        run: |
+          & "C:\Program Files (x86)\Inno Setup 6\ISCC.exe" "simple_live_app\windows\installer\simple_live_app.iss"
+
       # 上传Windows至Artifacts
       - name: Upload Windows APP to Artifacts
         uses: actions/upload-artifact@v4
@@ -247,6 +254,7 @@ jobs:
           path: |
             simple_live_app/build/dist/*/*.msix
             simple_live_app/build/dist/*/*.zip
+            dist/*-windows-x64-setup.exe
 
       #获取版本信息（自动从 Git Tag 提取）
       - name: Get version from tag
@@ -267,6 +275,7 @@ jobs:
           files: |
             simple_live_app/build/dist/*/*.msix
             simple_live_app/build/dist/*/*.zip
+            dist/*-windows-x64-setup.exe
 
       #完成
       - run: echo "🍏 Windows job's status is ${{ job.status }}."
