@@ -28,7 +28,7 @@ subprojects {
         // 对齐 JVM target：插件脚本默认 Java 1.8，Kotlin 插件默认 JVM 21，需一致
         project.afterEvaluate {
             (project.extensions.findByName("kotlin") as? org.jetbrains.kotlin.gradle.dsl.KotlinAndroidProjectExtension)?.compilerOptions?.jvmTarget?.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
-            val androidExt = project.extensions.findByName("android") as? com.android.build.gradle.LibraryExtension
+            val androidExt = project.extensions.findByName("android") as? com.android.build.api.dsl.LibraryExtension
             androidExt?.compileOptions?.sourceCompatibility = JavaVersion.VERSION_11
             androidExt?.compileOptions?.targetCompatibility = JavaVersion.VERSION_11
         }
